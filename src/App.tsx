@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Routes, Route, Link } from 'react-router-dom'
 import { Button } from './components/ui/button'
@@ -10,17 +10,19 @@ import ProjectMNA from './pages/ProjectMNA'
 import ProjectBank from './pages/ProjectBank'
 import ProjectStock from './pages/ProjectStock'
 import ProjectADAS from './pages/ProjectADAS'
+import ProjectAnalytics from './pages/ProjectAnalytics'
 
 const TITLE = 'AI/ML Engineer'
 const LOCATION = 'Chicago, IL'
-const EMAIL = '	smit@itjobinbox.com'
+const EMAIL = 'smit@itjobinbox.com'
 const GITHUB = 'https://github.com/smitpatel49'
 const LINKEDIN = 'https://www.linkedin.com/in/smitpatel7/'
 const FORM_ENDPOINT = ''
 
 const skills = [
-  'Python','Pandas','NumPy','LightGBM','XGBoost','Transformers (BERT/GPT)','TensorFlow','PyTorch',
-  'FastAPI','Flask','Docker','AWS SageMaker','MLflow','Prometheus/Grafana','Plotly','Tableau','Power BI',
+  'Python','SQL','Pandas','NumPy','LightGBM','XGBoost','Transformers (BERT/GPT)','TensorFlow','PyTorch',
+  'FastAPI','Flask','Docker','AWS SageMaker','MLflow','Prometheus/Grafana',
+  'Plotly','Tableau','Power BI','Excel/Google Sheets','A/B Testing','Statistics',
 ]
 
 const experiences = [
@@ -39,15 +41,31 @@ const experiences = [
     ], tags: ['Churn','Deployment','Visualization'] },
 ]
 
-const projects = [
-  { slug:'mna', title: 'Simulating Company Merger/Acquisition', summary: 'Monte Carlo valuation; accretion probability & sensitivity.', tech:['Python','Pandas','NumPy','Monte Carlo','Matplotlib'] },
-  { slug:'bank', title: 'Bank Marketing Classification', summary: 'XGBoost/Random Forest/SVM with calibration and a FastAPI scoring endpoint.', tech:['Python','XGBoost','scikit-learn','SVM','FastAPI'] },
-  { slug:'stock', title: 'Simulating a Buy/Sell Call for a Stock', summary: 'Bootstrapped scenarios; VaR and scenario fan charts.', tech:['Python','Pandas','NumPy','Time Series','Backtesting'] },
-  { slug:'adas', title: 'Lane & Road-Sign Detection for Self-Driving', summary: 'Lane segmentation + sign detection fused into control logic for speed & collision avoidance.', tech:['Python','OpenCV','PyTorch','Segmentation','Object Detection'] },
+const education = [
+  { school: 'DePaul University', location: 'Chicago, IL',
+    degree: 'Master’s in Data Science (Concentration in Computational Methods)', gpa: 'GPA: 3.7/4.0',
+    bullets: [
+      'Graduate President Scholar, $6,000 scholarship.',
+      'Member of the Upsilon Pi Epsilon Honor Society and the Golden Key International Honor Society.',
+    ] },
+  { school: 'Charotar University of Science and Technology', location: 'Gujarat, India',
+    degree: 'Bachelor of Computer Engineering', gpa: 'GPA: 3.86/4.0',
+    bullets: [
+      'Founding Chairperson of IEEE Student Branch.',
+      'Member of the Computer Society of India and executive member of LinkedIn Local Chapter Anand.',
+    ] },
 ]
 
-const Section=({id,title,children}:{id:string;title:string;children:React.ReactNode})=>(
-  <section id={id} className='section'>
+const projects = [
+  { slug:'analytics', title: 'Customer Retention & Revenue Analytics', summary: 'SQL cohort retention & purchase-funnel analysis, presented as an interactive dashboard.', tech:['SQL','PostgreSQL','Cohort Analysis','Dashboarding'] },
+  { slug:'mna', title: 'Simulating Company Merger/Acquisition', summary: '20,000-trial Monte Carlo on deal accretion, with regression-based sensitivity analysis.', tech:['Python','NumPy','Monte Carlo','scikit-learn'] },
+  { slug:'bank', title: 'Bank Marketing Classification', summary: 'Calibrated XGBoost scoring model vs. a Random Forest baseline, tuned to a call-center capacity constraint.', tech:['Python','XGBoost','scikit-learn','Calibration','FastAPI'] },
+  { slug:'stock', title: 'Simulating a Buy/Sell Call for a Stock', summary: 'Regime-aware block bootstrap over 3,000 paths; VaR/CVaR and a fan chart.', tech:['Python','NumPy','Bootstrap Simulation','Risk (VaR/CVaR)'] },
+  { slug:'adas', title: 'Lane & Road-Sign Detection for Self-Driving', summary: 'Perception → fusion → control architecture, validated with a real OpenCV pipeline on synthetic scenes.', tech:['Python','OpenCV','Segmentation','Object Detection','Control Systems'] },
+]
+
+const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>(
+  <section id={id} className={'section' + (className ? ' ' + className : '')}>
     <div className='section-stripe'></div>
     <motion.h2 initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.5}} transition={{duration:0.5}} className='section-title'>{title}</motion.h2>
     {children}
@@ -127,6 +145,7 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
           <a href='/#case-studies' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Case Studies</a>
           <a href='/#projects' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Projects</a>
           <a href='/#skills' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Skills</a>
+          <a href='/#education' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Education</a>
           <a href='/#contact' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Contact</a>
         </nav>
         <div className='mt-6 flex flex-col gap-2'>
@@ -164,8 +183,29 @@ const BackgroundParticles=()=>{
   return <canvas ref={ref} className='absolute inset-0 h-[420px] w-full -z-10'/>
 }
 
+const NAV_IDS = ['home','about','playground','case-studies','projects','skills','education','contact']
+
+function useActiveSection(ids:string[]){
+  const [active,setActive] = useState(ids[0])
+  useEffect(()=>{
+    const els = ids.map(id=>document.getElementById(id)).filter(Boolean) as HTMLElement[]
+    if(els.length===0) return
+    const observer = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting) setActive(entry.target.id)
+      })
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 })
+    els.forEach(el=>observer.observe(el))
+    return ()=>observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[ids.join(',')])
+  return active
+}
+
 const Header=()=>{
   const [open,setOpen]=useState(false)
+  const active = useActiveSection(NAV_IDS)
+  const navCls = (id:string) => 'opacity-80 hover:opacity-100 transition-colors' + (active===id ? ' !opacity-100 text-accent-600 dark:text-accent-400 font-medium' : '')
   return (
     <div className='sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/40 dark:bg-neutral-900/60 border-b'>
       <div className='container-narrow h-14 grid grid-cols-[auto,1fr,auto] items-center gap-3'>
@@ -173,13 +213,14 @@ const Header=()=>{
           <Menu className='w-6 h-6'/>
         </button>
         <nav className='hidden xl:flex justify-center gap-5 text-sm whitespace-nowrap'>
-          <a href='/' className='opacity-80 hover:opacity-100'>Home</a>
-          <a href='/#about' className='opacity-80 hover:opacity-100'>About</a>
-          <a href='/#playground' className='opacity-80 hover:opacity-100'>Playground</a>
-          <a href='/#case-studies' className='opacity-80 hover:opacity-100'>Case Studies</a>
-          <a href='/#projects' className='opacity-80 hover:opacity-100'>Projects</a>
-          <a href='/#skills' className='opacity-80 hover:opacity-100'>Skills</a>
-          <a href='/#contact' className='opacity-80 hover:opacity-100'>Contact</a>
+          <a href='/' className={navCls('home')}>Home</a>
+          <a href='/#about' className={navCls('about')}>About</a>
+          <a href='/#playground' className={navCls('playground')}>Playground</a>
+          <a href='/#case-studies' className={navCls('case-studies')}>Case Studies</a>
+          <a href='/#projects' className={navCls('projects')}>Projects</a>
+          <a href='/#skills' className={navCls('skills')}>Skills</a>
+          <a href='/#education' className={navCls('education')}>Education</a>
+          <a href='/#contact' className={navCls('contact')}>Contact</a>
         </nav>
         <div className='justify-self-end flex items-center gap-2'>
           <ThemeToggle/>
@@ -203,7 +244,7 @@ const Hero=()=>(
           <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>{TITLE} · {LOCATION}</p>
         </div>
       </div>
-      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90 text-just'>I build reliable, production-grade ML systems end-to-end — from data pipelines and modeling to deployment, monitoring, and product impact. Target roles: AI/ML Engineer and Data Scientist. Work spans forecasting & simulation, computer vision, NLP, and decisioning with a strong MLOps backbone.</p>
+      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I build reliable, production-grade ML and analytics systems end-to-end — from data pipelines and modeling to deployment, monitoring, and product impact. Work spans forecasting & simulation, computer vision, NLP, and decisioning with a strong MLOps backbone.</p>
       <div className='flex gap-3 justify-center flex-wrap'>
         <a href='#projects'><Button className='group'>View Projects <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-0.5 transition-transform'/></Button></a>
         <a href='/Smit-Resume.pdf' target='_blank' rel='noreferrer'><Button variant='secondary'>Download Resume</Button></a>
@@ -224,8 +265,8 @@ const Home=()=> (
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p className='text-just'>I’m an AI/ML engineer who enjoys taking ambiguous, real‑world problems and turning them into dependable systems. I’ve shipped models and services across healthcare and analytics — spanning forecasting & simulation, risk and marketing decisioning, NLP, and computer vision — with clear SLAs and ownership over data, modeling, and runtime.</p>
-            <p className='text-just'>My toolkit includes Python (NumPy/Pandas, scikit‑learn, PyTorch), modern MLOps (FastAPI, Docker, MLflow, SageMaker), and pragmatic product metrics. I value iteration speed, observability, and making models legible to the business.</p>
+            <p>I’m an AI/ML engineer who enjoys taking ambiguous, real‑world problems and turning them into dependable systems. I’ve shipped models and services across healthcare and analytics — spanning forecasting & simulation, risk and marketing decisioning, NLP, and computer vision — with clear SLAs and ownership over data, modeling, and runtime.</p>
+            <p>My toolkit includes Python (NumPy/Pandas, scikit‑learn, PyTorch), SQL, modern MLOps (FastAPI, Docker, MLflow, SageMaker), and pragmatic product metrics. I value iteration speed, observability, and making models legible to the business.</p>
           </div>
           <div>
             <Card>
@@ -256,6 +297,12 @@ const Home=()=> (
           <CardHeader><CardTitle>Quick NER Demo</CardTitle></CardHeader>
           <CardContent className='text-sm space-y-3'>
             <NerDemo />
+          </CardContent>
+        </Card>
+        <Card className='hover:shadow-md transition-shadow'>
+          <CardHeader><CardTitle>Mini SQL Playground</CardTitle></CardHeader>
+          <CardContent className='text-sm space-y-3'>
+            <SqlDemo />
           </CardContent>
         </Card>
       </div>
@@ -326,7 +373,31 @@ const Home=()=> (
     <Section id='skills' title='Skills' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
       <div className='flex flex-wrap gap-2 justify-center'>{skills.map((s,i)=>(<Badge key={i} variant='secondary' className='text-sm'>{s}</Badge>))}</div>
-    
+
+          </div>
+      </Section>
+
+    <Section id='education' title='Education' className='section-bg'>
+          <div className='max-w-5xl mx-auto px-4 sm:px-6'>
+        <div className='grid grid-cols-1 gap-5'>
+          {education.map((e,i) => (
+            <div key={i} className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
+              <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 border-b border-neutral-200/60 dark:border-neutral-800/60 pb-3 mb-3'>
+                <div>
+                  <h3 className='text-lg font-semibold'>{e.school}</h3>
+                  <div className='text-sm opacity-80'>{e.degree}</div>
+                </div>
+                <div className='text-sm opacity-70 sm:text-right whitespace-nowrap'>
+                  <div>{e.location}</div>
+                  <div>{e.gpa}</div>
+                </div>
+              </div>
+              <ul className='list-disc pl-6 space-y-2 text-sm text-left'>
+                {e.bullets.map((b,j)=>(<li key={j}>{b}</li>))}
+              </ul>
+            </div>
+          ))}
+        </div>
           </div>
       </Section>
 
@@ -356,7 +427,7 @@ const Home=()=> (
           </div>
       </Section>
 
-    <footer className='container-narrow pb-16 text-xs opacity-60 text-center'>© 2025 Smit Patel</footer>
+    <footer className='container-narrow pb-16 text-xs opacity-60 text-center'>© {new Date().getFullYear()} Smit Patel</footer>
   </div>
 )
 
@@ -380,6 +451,99 @@ function ChurnDemo(){
       <div className='mt-4 text-sm'>Churn Probability: <span className='font-medium'>{pct}%</span></div>
       <div className='h-2 rounded bg-neutral-200 dark:bg-neutral-800 mt-2'><div className='h-2 rounded bg-neutral-900 dark:bg-neutral-100' style={{ width: String(pct) + '%' }} /></div>
       <div className='mt-3 text-xs opacity-70'>*Heuristic demo; production used LightGBM features.</div>
+    </div>
+  )
+}
+
+type SqlRow = Record<string, string | number>
+const ORDERS_TABLE: SqlRow[] = [
+  { id:1, customer:'Ava',    region:'West',  amount:120, status:'shipped' },
+  { id:2, customer:'Liam',   region:'East',  amount:75,  status:'pending' },
+  { id:3, customer:'Noah',   region:'West',  amount:200, status:'shipped' },
+  { id:4, customer:'Emma',   region:'South', amount:50,  status:'cancelled' },
+  { id:5, customer:'Olivia', region:'East',  amount:300, status:'shipped' },
+  { id:6, customer:'Ethan',  region:'West',  amount:90,  status:'pending' },
+]
+
+function parseLiteral(raw:string): string | number {
+  const s = raw.trim()
+  const unquoted = /^'(.*)'$/.test(s) ? s.slice(1,-1) : s
+  if (unquoted !== '' && !isNaN(Number(unquoted))) return Number(unquoted)
+  return unquoted
+}
+function compareOp(a:string|number, b:string|number, op:string){
+  switch(op){
+    case '=': return a==b; case '!=': return a!=b
+    case '>': return a>b; case '<': return a<b
+    case '>=': return a>=b; case '<=': return a<=b
+    default: return false
+  }
+}
+function runMiniSQL(query:string, table:SqlRow[]): { columns:string[]; rows:SqlRow[] } | { error:string } {
+  const m = query.trim().match(/^SELECT\s+(.+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?(?:\s+ORDER\s+BY\s+(\w+)(\s+ASC|\s+DESC)?)?(?:\s+LIMIT\s+(\d+))?\s*;?\s*$/i)
+  if(!m) return { error: 'Unsupported query. Try: SELECT * FROM orders WHERE amount > 100 ORDER BY amount DESC LIMIT 5' }
+  const [, colsRaw, tableName, whereRaw, orderCol, orderDirRaw, limitRaw] = m
+  if(tableName.toLowerCase() !== 'orders') return { error: `Unknown table "${tableName}". Try: orders` }
+  let rows = table.slice()
+
+  if(whereRaw){
+    const cm = whereRaw.trim().match(/^(\w+)\s*(>=|<=|!=|=|>|<)\s*(.+?)\s*$/)
+    if(!cm) return { error: `Could not parse WHERE clause: "${whereRaw}"` }
+    const [, col, op, litRaw] = cm
+    if(!(col in table[0])) return { error: `Unknown column "${col}"` }
+    const lit = parseLiteral(litRaw)
+    rows = rows.filter(r=>{
+      const cell = r[col]
+      const a = (typeof cell==='string' && typeof lit==='string') ? cell.toLowerCase() : cell
+      const b = (typeof cell==='string' && typeof lit==='string') ? lit.toLowerCase() : lit
+      return compareOp(a,b,op)
+    })
+  }
+  if(orderCol){
+    if(!(orderCol in table[0])) return { error: `Unknown column "${orderCol}" in ORDER BY` }
+    const dir = (orderDirRaw||'').trim().toUpperCase()==='DESC' ? -1 : 1
+    rows = rows.slice().sort((a,b)=>{
+      const av=a[orderCol], bv=b[orderCol]
+      if(av<bv) return -1*dir; if(av>bv) return 1*dir; return 0
+    })
+  }
+  if(limitRaw) rows = rows.slice(0, parseInt(limitRaw,10))
+
+  let columns:string[]
+  if(colsRaw.trim()==='*'){ columns = Object.keys(table[0]) }
+  else {
+    columns = colsRaw.split(',').map(c=>c.trim())
+    for(const c of columns){ if(!(c in table[0])) return { error: `Unknown column "${c}" in SELECT` } }
+  }
+  const outRows = rows.map(r=>{ const o:SqlRow={}; columns.forEach(c=>o[c]=r[c]); return o })
+  return { columns, rows: outRows }
+}
+
+function SqlDemo(){
+  const [query,setQuery] = useState("SELECT customer, region, amount FROM orders WHERE amount > 80 ORDER BY amount DESC LIMIT 5;")
+  const result = useMemo(()=>runMiniSQL(query, ORDERS_TABLE), [query])
+  return (
+    <div>
+      <div className='text-xs opacity-70 mb-2'>Table: <code>orders(id, customer, region, amount, status)</code></div>
+      <textarea className='w-full h-20 p-2 rounded border bg-transparent font-mono text-xs' value={query} onChange={(e)=>setQuery(e.target.value)} spellCheck={false} />
+      {('error' in result) ? (
+        <div className='mt-3 text-xs text-red-500'>{result.error}</div>
+      ) : (
+        <div className='mt-3 overflow-x-auto'>
+          <table className='w-full text-xs border-collapse'>
+            <thead><tr>{result.columns.map(c=>(<th key={c} className='text-left border-b border-neutral-300 dark:border-neutral-700 px-2 py-1 opacity-70'>{c}</th>))}</tr></thead>
+            <tbody>
+              {result.rows.map((r,i)=>(
+                <tr key={i} className='border-b border-neutral-200/50 dark:border-neutral-800/50'>
+                  {result.columns.map(c=>(<td key={c} className='px-2 py-1'>{String(r[c])}</td>))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {result.rows.length===0 && <div className='text-xs opacity-60 mt-1'>No rows matched.</div>}
+        </div>
+      )}
+      <div className='mt-3 text-xs opacity-70'>*Runs a simplified SQL subset (SELECT/FROM/WHERE/ORDER BY/LIMIT) against an in-memory sample table — for demonstration, not a full SQL engine.</div>
     </div>
   )
 }
@@ -411,6 +575,7 @@ export default function App(){
   return (
     <Routes>
       <Route path='/' element={<Home/>} />
+      <Route path='/projects/analytics' element={<ProjectAnalytics/>} />
       <Route path='/projects/mna' element={<ProjectMNA/>} />
       <Route path='/projects/bank' element={<ProjectBank/>} />
       <Route path='/projects/stock' element={<ProjectStock/>} />
