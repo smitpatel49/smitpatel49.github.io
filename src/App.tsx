@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Routes, Route, Link } from 'react-router-dom'
 import { Button } from './components/ui/button'
@@ -14,6 +14,7 @@ import ProjectAnalytics from './pages/ProjectAnalytics'
 import ProjectForecast from './pages/ProjectForecast'
 import ProjectNLP from './pages/ProjectNLP'
 import ProjectAccountRisk from './pages/ProjectAccountRisk'
+import AmbientBackground from './components/AmbientBackground'
 
 const TITLE = 'Data Scientist & Analytics Professional'
 const LOCATION = 'Chicago, IL'
@@ -167,62 +168,6 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
   )
 }
 
-// Sitewide ambient backdrop: a subtle, low-density network/constellation canvas.
-// Fixed to the viewport (not the hero) so it reads as one consistent motif across
-// every section instead of a band that stops after the hero, and its size always
-// matches the viewport rather than a hardcoded height (avoids the stretched look
-// on wide screens). Dots are drawn hollow (outline only) rather than filled.
-// The cursor-follow tether is back, but it only lights up in the side gutters --
-// outside the width of the text column (matched to the site's widest content
-// container) -- so it stays engaging in the margins without ever cluttering the
-// area someone is actually reading. Respects prefers-reduced-motion by rendering
-// a single static frame with no animation or cursor interaction.
-const CONTENT_MAX_WIDTH = 1024 // matches the site's widest content container (max-w-5xl)
-const GUTTER_FEATHER = 90 // px of soft fade between the content edge and full tether effect
-const BackgroundParticles=()=>{
-  const ref = useRef<HTMLCanvasElement|null>(null)
-  useEffect(()=>{
-    const c=ref.current!; const ctx=c.getContext('2d')!
-    const density = 26000 // px^2 per particle (scales particle count to the viewport area)
-    const makePts = (w:number,h:number) => {
-      const count = Math.max(24, Math.min(90, Math.round((w*h)/density)))
-      return Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.6+1.3}))
-    }
-    let w=(c.width=window.innerWidth), h=(c.height=window.innerHeight)
-    type P={x:number;y:number;vx:number;vy:number;r:number}
-    let pts:P[] = makePts(w,h)
-    const onR=()=>{ w=(c.width=window.innerWidth); h=(c.height=window.innerHeight); pts=makePts(w,h) }
-    window.addEventListener('resize', onR)
-    let mx=-9999,my=-9999; const onM=(e:MouseEvent)=>{ mx=e.clientX; my=e.clientY }
-    window.addEventListener('mousemove', onM)
-    const linkDist = 110
-    const draw = () => {
-      ctx.clearRect(0,0,w,h)
-      ctx.lineWidth = 1
-      // How "in the gutter" the cursor currently is: 0 anywhere over the content
-      // column, ramping to 1 over GUTTER_FEATHER px once it's clearly outside it.
-      const half = Math.min(CONTENT_MAX_WIDTH,w)/2
-      const contentLeft = w/2-half, contentRight = w/2+half
-      const outside = mx<contentLeft ? contentLeft-mx : mx>contentRight ? mx-contentRight : 0
-      const gutterFactor = Math.max(0, Math.min(1, outside/GUTTER_FEATHER))
-      for(let i=0;i<pts.length;i++){
-        const p=pts[i]
-        ctx.strokeStyle='rgba(120,120,120,0.45)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke()
-        for(let j=i+1;j<pts.length;j++){ const q=pts[j]; const dx=p.x-q.x, dy=p.y-q.y; const d=Math.hypot(dx,dy); if(d<linkDist){ ctx.strokeStyle=`rgba(120,120,120,${0.09*(1-d/linkDist)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke() } }
-        if(gutterFactor>0){ const dm=Math.hypot(p.x-mx,p.y-my); if(dm<160){ ctx.strokeStyle=`rgba(120,120,120,${0.55*gutterFactor*(1-dm/160)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mx,my); ctx.stroke() } }
-      }
-      if(gutterFactor>0){ ctx.strokeStyle=`rgba(120,120,120,${0.5*gutterFactor})`; ctx.beginPath(); ctx.arc(mx,my,3,0,Math.PI*2); ctx.stroke() }
-    }
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let af=0
-    if(prefersReduced){ draw() } else {
-      const loop=()=>{ for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1 } draw(); af=requestAnimationFrame(loop) }
-      loop()
-    }
-    return ()=>{ cancelAnimationFrame(af); window.removeEventListener('resize', onR); window.removeEventListener('mousemove', onM) }
-  },[])
-  return <canvas ref={ref} aria-hidden='true' className='pointer-events-none fixed inset-0 -z-10'/>
-}
 
 const NAV_IDS = ['home','about','playground','case-studies','projects','skills','education','contact']
 
@@ -292,7 +237,7 @@ const Hero=()=>(
 
 const Home=()=> (
   <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-    <BackgroundParticles/>
+    <AmbientBackground/>
     <Header/>
     <Hero/>
 
@@ -616,4 +561,3 @@ export default function App(){
     </Routes>
   )
 }
-
