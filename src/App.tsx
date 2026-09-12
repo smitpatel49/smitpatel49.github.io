@@ -44,7 +44,7 @@ const focusAreas = [
 
 const education = [
   { school: 'DePaul University', location: 'Chicago, IL',
-    degree: 'Master’s in Data Science (Concentration in Computational Methods)', gpa: 'GPA: 3.7/4.0',
+    degree: "Master's in Data Science (Concentration in Computational Methods)", gpa: 'GPA: 3.7/4.0',
     bullets: [
       'Graduate President Scholar, $6,000 scholarship.',
       'Member of the Upsilon Pi Epsilon Honor Society and the Golden Key International Honor Society.',
@@ -241,12 +241,11 @@ const Home=()=> (
     <Header/>
     <Hero/>
 
-    <div>
-      <Section id='about' title='About' className='section-bg'>
+    <Section id='about' title='About' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p>I like problems that don’t come pre-labeled: the real first step is usually figuring out what’s actually being asked, before reaching for a model or a dashboard. That’s shaped a career that moves between business and data analysis, statistical modeling, and production ML, depending on what the problem actually needs. I’ve worked that way across consulting, research, and independent projects, in forecasting, risk, NLP, and computer vision.</p>
+            <p>I like problems that don't come pre-labeled: the real first step is usually figuring out what's actually being asked, before reaching for a model or a dashboard. That's shaped a career that moves between business and data analysis, statistical modeling, and production ML, depending on what the problem actually needs. I've worked that way across consulting, research, and independent projects, in forecasting, risk, NLP, and computer vision.</p>
             <p>My toolkit runs from Python and SQL, through modern MLOps (Docker, MLflow, SageMaker), to the reporting layer stakeholders actually read: Power BI, Excel, plain language. I care less about which single label fits me, and more about whether the answer is trustworthy and someone can act on it.</p>
           </div>
           <div>
@@ -264,7 +263,6 @@ const Home=()=> (
       
           </div>
       </Section>
-    </div>
 
     <Section id='playground' title='Interactive Playground' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
@@ -292,10 +290,7 @@ const Home=()=> (
           </div>
       </Section>
 
-    <div>
-      
-<div>
-  <Section id='case-studies' title='Experience' className='section-bg'>
+    <Section id='case-studies' title='Experience' className='section-bg'>
         <div className='max-w-5xl mx-auto px-4 sm:px-6'>
           <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level. Think of it as a complement to my resume, not a repeat of it.</p>
           <div className='grid grid-cols-1 gap-5'>
@@ -314,9 +309,8 @@ const Home=()=> (
           </div>
         </div>
       </Section>
-</div>
 
-<Section id='projects' title='Selected Projects' className='section-bg'>
+    <Section id='projects' title='Selected Projects' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch'>
           {projects.map((p,i) => (
@@ -336,7 +330,6 @@ const Home=()=> (
       
           </div>
       </Section>
-    </div>
 
     <Section id='skills' title='Skills' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
