@@ -100,7 +100,7 @@ combined_ni = acq_ni + tgt_ni + synergy_pretax*(1-TAX) \\
 accretion = (combined_ni/(acq_shares+new_shares) - acq_eps) / acq_eps
 
 # Sensitivity: standardized regression of accretion on each input,
-# not a naive one-at-a-time tornado -- holds correlations in the sample intact.
+# not a naive one-at-a-time tornado, so correlations in the sample stay intact.
 coefs = LinearRegression().fit(zscore(inputs), zscore(accretion)).coef_`
 
 export default function Page() {
