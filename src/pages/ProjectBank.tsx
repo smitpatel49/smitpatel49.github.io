@@ -156,7 +156,7 @@ export default function Page() {
                 <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>40.2%</div><div className='text-[11px] opacity-70'>Precision @ top 15%</div></div>
                 <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>2.8×</div><div className='text-[11px] opacity-70'>Lift over base rate</div></div>
               </div>
-              <p className='mt-3 opacity-90'>Calibration barely moves AUC (0.778 to 0.779), which is expected since isotonic scaling preserves rank order, but it nearly halves the Brier score, and that's what actually matters once these probabilities feed an expected-value calculation. The Random Forest baseline actually edges out XGBoost on raw AUC here (0.790 vs. 0.779). XGBoost was carried forward anyway because it calibrates cleanly and the gap is within normal run-to-run noise on a dataset this size, worth re-checking on more data before treating it as settled.</p>
+              <p className='mt-3 opacity-90'>Calibration barely moves AUC, as expected since isotonic scaling preserves rank order, but it nearly halves the Brier score (0.156 to 0.104), which is what actually matters once these probabilities feed an expected-value calculation. The Random Forest baseline actually edges out XGBoost on raw AUC here (0.790 vs. 0.779). XGBoost was carried forward anyway because it calibrates cleanly and the gap is within normal run-to-run noise on a dataset this size, worth re-checking on more data before treating it as settled.</p>
             </CardContent>
           </Card>
 
@@ -180,7 +180,7 @@ export default function Page() {
             <CardHeader><CardTitle>Confusion Matrix @ 15% Capacity Threshold</CardTitle></CardHeader>
             <CardContent className='text-sm space-y-3'>
               <ConfusionMatrix tn={1726} fp={202} fn={186} tp={136} />
-              <p className='opacity-90'>Of the 338 customers actually likely to subscribe, calling only the top 15% by score still reaches 136 of them (42% recall) while contacting 4x fewer people than a blanket campaign.</p>
+              <p className='opacity-90'>Calling only the top 15% of the list by score (338 customers) still reaches 136 of the 322 who would actually subscribe (42% recall), for 85% fewer calls than blanketing the entire list.</p>
             </CardContent>
           </Card>
 
