@@ -11,6 +11,9 @@ import ProjectBank from './pages/ProjectBank'
 import ProjectStock from './pages/ProjectStock'
 import ProjectADAS from './pages/ProjectADAS'
 import ProjectAnalytics from './pages/ProjectAnalytics'
+import ProjectForecast from './pages/ProjectForecast'
+import ProjectNLP from './pages/ProjectNLP'
+import ProjectAccountRisk from './pages/ProjectAccountRisk'
 
 const TITLE = 'Data Scientist & Analytics Professional'
 const LOCATION = 'Chicago, IL'
@@ -19,21 +22,22 @@ const GITHUB = 'https://github.com/smitpatel49'
 const LINKEDIN = 'https://www.linkedin.com/in/smitpatel7/'
 const FORM_ENDPOINT = ''
 
-const skills = [
-  'Python','SQL','Pandas','NumPy','LightGBM','XGBoost','Transformers (BERT/GPT)','TensorFlow','PyTorch',
-  'FastAPI','Flask','Docker','AWS SageMaker','MLflow','Prometheus/Grafana',
-  'Plotly','Tableau','Power BI','Excel/Google Sheets','A/B Testing','Statistics',
+const skillGroups = [
+  { group: 'Languages & Core', items: ['Python','SQL','Pandas','NumPy','Statistics'] },
+  { group: 'Modeling & ML', items: ['LightGBM','XGBoost','Transformers (BERT/GPT)','TensorFlow','PyTorch','OpenCV'] },
+  { group: 'Data Engineering & MLOps', items: ['Snowflake','Redshift','AWS SageMaker','AWS S3/Lambda','Docker','FastAPI','Flask','MLflow','Prometheus/Grafana'] },
+  { group: 'Analytics & BI', items: ['Power BI','Tableau','Plotly','Excel/Google Sheets','A/B Testing'] },
 ]
 
 const focusAreas = [
   { theme: 'Business & Data Analysis', status: 'Current',
-    summary: 'Ongoing work at Sputnik, an IT staffing company, turning staffing and account activity into governed data models, stakeholder-reviewed requirements, and decision-ready reporting — surfacing which client relationships are profitable and which need attention. Builds on an earlier analyst engagement there, and a business-analysis thread also ran through a later consulting role.',
+    summary: 'Ongoing work at Sputnik, an IT staffing company, turning staffing and account activity into governed data models, stakeholder-reviewed requirements, and decision-ready reporting that surfaces which client relationships are profitable and which need attention. Builds on an earlier analyst engagement there, and a business-analysis thread also ran through a later consulting role.',
     tags: ['Business Analysis','Data Analysis','Requirements & UAT','Dashboards'] },
   { theme: 'Machine Learning & AI Systems', status: 'Past',
-    summary: 'A consulting engagement at Sunrise Electronics Inc., a PCB fabrication company, centered on a multimodal specification pipeline — reconciling CAM files, PDFs, and OCR output into a single confidence-scored model with human review built into the workflow. The same engagement carried data-science and business-analysis components alongside it, making it the most technically versatile role in my background.',
+    summary: 'A consulting engagement at Sunrise Electronics Inc., a PCB fabrication company, centered on a multimodal specification pipeline that reconciles CAM files, PDFs, and OCR output into a single confidence-scored model, with human review built into the workflow. The same engagement carried data-science and business-analysis components alongside it, making it the most technically versatile role in my background.',
     tags: ['AI/ML Engineering','Document Intelligence','Data Science','Consulting'] },
   { theme: 'Research & Data', status: 'Past',
-    summary: "Research and data work at CHARUSAT Research Center, held alongside undergraduate study at Charotar University of Science and Technology — building a consistent reporting structure across a multi-project research portfolio, and designing and analyzing stakeholder surveys with an eye toward response bias and sample size.",
+    summary: "Research and data work at CHARUSAT Research Center, held alongside undergraduate study at Charotar University of Science and Technology. Built a consistent reporting structure across a multi-project research portfolio, and designed and analyzed stakeholder surveys with an eye toward response bias and sample size.",
     tags: ['Research','Data Analysis','Survey Design'] },
 ]
 
@@ -58,6 +62,9 @@ const projects = [
   { slug:'bank', title: 'Bank Marketing Classification', summary: 'Calibrated XGBoost scoring model vs. a Random Forest baseline, tuned to a call-center capacity constraint.', tech:['Python','XGBoost','scikit-learn','Calibration','FastAPI'] },
   { slug:'stock', title: 'Simulating a Buy/Sell Call for a Stock', summary: 'Regime-aware block bootstrap over 3,000 paths; VaR/CVaR and a fan chart.', tech:['Python','NumPy','Bootstrap Simulation','Risk (VaR/CVaR)'] },
   { slug:'adas', title: 'Lane & Road-Sign Detection for Self-Driving', summary: 'Perception → fusion → control architecture, validated with a real OpenCV pipeline on synthetic scenes.', tech:['Python','OpenCV','Segmentation','Object Detection','Control Systems'] },
+  { slug:'forecast', title: 'Daily Demand Forecasting', summary: 'LightGBM forecasting with lag/rolling features, benchmarked honestly against a seasonal-naive baseline.', tech:['Python','Pandas','LightGBM','Time-Series'] },
+  { slug:'nlp', title: 'Support Ticket Routing (NLP)', summary: 'TF-IDF baseline vs. a small transformer trained from scratch, with an honest look at where each one wins.', tech:['Python','scikit-learn','PyTorch','NLP'] },
+  { slug:'account-risk', title: 'Account Health & Renewal-Risk Reporting', summary: 'A stakeholder-governed at-risk definition turned into a KPI dashboard for CS, AM, and Renewals.', tech:['Business Analysis','Requirements Gathering','Data Modeling','KPI Design'] },
 ]
 
 const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>(
@@ -164,15 +171,22 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
 // Fixed to the viewport (not the hero) so it reads as one consistent motif across
 // every section instead of a band that stops after the hero, and its size always
 // matches the viewport rather than a hardcoded height (avoids the stretched look
-// on wide screens). Respects prefers-reduced-motion by rendering a single static frame.
+// on wide screens). Dots are drawn hollow (outline only) rather than filled.
+// The cursor-follow tether is back, but it only lights up in the side gutters --
+// outside the width of the text column (matched to the site's widest content
+// container) -- so it stays engaging in the margins without ever cluttering the
+// area someone is actually reading. Respects prefers-reduced-motion by rendering
+// a single static frame with no animation or cursor interaction.
+const CONTENT_MAX_WIDTH = 1024 // matches the site's widest content container (max-w-5xl)
+const GUTTER_FEATHER = 90 // px of soft fade between the content edge and full tether effect
 const BackgroundParticles=()=>{
   const ref = useRef<HTMLCanvasElement|null>(null)
   useEffect(()=>{
     const c=ref.current!; const ctx=c.getContext('2d')!
-    const density = 22000 // px^2 per particle — scales count to viewport area
+    const density = 26000 // px^2 per particle (scales particle count to the viewport area)
     const makePts = (w:number,h:number) => {
-      const count = Math.max(28, Math.min(110, Math.round((w*h)/density)))
-      return Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.35,r:Math.random()*1.6+0.5}))
+      const count = Math.max(24, Math.min(90, Math.round((w*h)/density)))
+      return Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.6+1.3}))
     }
     let w=(c.width=window.innerWidth), h=(c.height=window.innerHeight)
     type P={x:number;y:number;vx:number;vy:number;r:number}
@@ -181,15 +195,23 @@ const BackgroundParticles=()=>{
     window.addEventListener('resize', onR)
     let mx=-9999,my=-9999; const onM=(e:MouseEvent)=>{ mx=e.clientX; my=e.clientY }
     window.addEventListener('mousemove', onM)
-    const linkDist = 115
+    const linkDist = 110
     const draw = () => {
       ctx.clearRect(0,0,w,h)
+      ctx.lineWidth = 1
+      // How "in the gutter" the cursor currently is: 0 anywhere over the content
+      // column, ramping to 1 over GUTTER_FEATHER px once it's clearly outside it.
+      const half = Math.min(CONTENT_MAX_WIDTH,w)/2
+      const contentLeft = w/2-half, contentRight = w/2+half
+      const outside = mx<contentLeft ? contentLeft-mx : mx>contentRight ? mx-contentRight : 0
+      const gutterFactor = Math.max(0, Math.min(1, outside/GUTTER_FEATHER))
       for(let i=0;i<pts.length;i++){
         const p=pts[i]
-        ctx.fillStyle='rgba(120,120,120,0.4)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill()
-        for(let j=i+1;j<pts.length;j++){ const q=pts[j]; const dx=p.x-q.x, dy=p.y-q.y; const d=Math.hypot(dx,dy); if(d<linkDist){ ctx.strokeStyle=`rgba(120,120,120,${0.12*(1-d/linkDist)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke() } }
-        const dm=Math.hypot(p.x-mx,p.y-my); if(dm<130){ ctx.strokeStyle='rgba(120,120,120,0.22)'; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mx,my); ctx.stroke() }
+        ctx.strokeStyle='rgba(120,120,120,0.45)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke()
+        for(let j=i+1;j<pts.length;j++){ const q=pts[j]; const dx=p.x-q.x, dy=p.y-q.y; const d=Math.hypot(dx,dy); if(d<linkDist){ ctx.strokeStyle=`rgba(120,120,120,${0.09*(1-d/linkDist)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke() } }
+        if(gutterFactor>0){ const dm=Math.hypot(p.x-mx,p.y-my); if(dm<160){ ctx.strokeStyle=`rgba(120,120,120,${0.55*gutterFactor*(1-dm/160)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mx,my); ctx.stroke() } }
       }
+      if(gutterFactor>0){ ctx.strokeStyle=`rgba(120,120,120,${0.5*gutterFactor})`; ctx.beginPath(); ctx.arc(mx,my,3,0,Math.PI*2); ctx.stroke() }
     }
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let af=0
@@ -262,12 +284,8 @@ const Hero=()=>(
           <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>{TITLE} · {LOCATION}</p>
         </div>
       </div>
-      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I turn ambiguous business problems into decisions and systems — through data analysis, statistical modeling, and production ML. I work the full arc: scoping the business question, exploring and analyzing the data, building the model or dashboard, and shipping it into something people actually use.</p>
-      <div className='flex gap-3 justify-center flex-wrap'>
-        <a href='#projects'><Button className='group'>View Projects <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-0.5 transition-transform'/></Button></a>
-        <a href={'mailto:'+EMAIL}><Button variant='outline'>Email me</Button></a>
-      </div>
-      <div className='flex gap-2 flex-wrap mt-2 justify-center'>{['NLP','Time-Series','MLOps','A/B Testing','Dashboards','Business Analytics'].map((t,i)=>(<Pill key={i}>{t}</Pill>))}</div>
+      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I turn ambiguous business problems into decisions and systems, using data analysis, statistical modeling, and production ML. I work the full arc: scoping the business question, exploring and analyzing the data, building the model or dashboard, and shipping it into something people actually use.</p>
+      <div className='flex gap-2 flex-wrap mt-2 justify-center'>{['Statistical Modeling','Production ML','Business Analytics'].map((t,i)=>(<Pill key={i}>{t}</Pill>))}</div>
     </motion.div>
   </section>
 )
@@ -283,17 +301,17 @@ const Home=()=> (
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p>I like problems that don’t come pre-labeled — where the real first step is figuring out what’s actually being asked before reaching for a model or a dashboard. That’s shaped a career that moves fluidly between business and data analysis, statistical modeling, and production ML, depending on what the problem in front of me actually needs. I’ve worked that way across consulting, research, and independent projects spanning forecasting, risk, NLP, and computer vision.</p>
-            <p>My toolkit runs from Python and SQL through modern MLOps (Docker, MLflow, SageMaker) to the reporting layer stakeholders actually read — Power BI, Excel, plain language. I care less about which single label fits me, and more about whether the answer is trustworthy and someone can act on it.</p>
+            <p>I like problems that don’t come pre-labeled: the real first step is usually figuring out what’s actually being asked, before reaching for a model or a dashboard. That’s shaped a career that moves between business and data analysis, statistical modeling, and production ML, depending on what the problem actually needs. I’ve worked that way across consulting, research, and independent projects, in forecasting, risk, NLP, and computer vision.</p>
+            <p>My toolkit runs from Python and SQL, through modern MLOps (Docker, MLflow, SageMaker), to the reporting layer stakeholders actually read: Power BI, Excel, plain language. I care less about which single label fits me, and more about whether the answer is trustworthy and someone can act on it.</p>
           </div>
           <div>
             <Card>
               <CardHeader><CardTitle className='text-base'>Quick Facts</CardTitle></CardHeader>
               <CardContent className='text-sm space-y-2'>
-                <div className='flex items-center gap-2'><Boxes className='w-4 h-4'/> End-to-end: data → model → API → monitoring</div>
-                <div className='flex items-center gap-2'><LineChart className='w-4 h-4'/> Domains: forecasting/simulation, CV, NLP, decisioning</div>
-                <div className='flex items-center gap-2'><Cpu className='w-4 h-4'/> Ops: CI/CD, containerization, metrics, alerts</div>
-                <div className='flex items-center gap-2'><Users className='w-4 h-4'/> Business partnership: turning ambiguous asks into KPIs, analysis, and dashboards</div>
+                <div className='flex items-center gap-2'><Boxes className='w-4 h-4 shrink-0'/> Comfortable owning a project end to end: framing the question, building the model or dashboard, and shipping something people actually use</div>
+                <div className='flex items-center gap-2'><LineChart className='w-4 h-4 shrink-0'/> Domains I've worked across: forecasting and simulation, computer vision, NLP, and decision systems</div>
+                <div className='flex items-center gap-2'><Cpu className='w-4 h-4 shrink-0'/> Also fluent in the less glamorous half of the job: CI/CD, containerized deployment, monitoring, and alerting</div>
+                <div className='flex items-center gap-2'><Users className='w-4 h-4 shrink-0'/> Often the bridge between a vague business ask and the KPI, analysis, or dashboard that actually answers it</div>
               </CardContent>
             </Card>
           </div>
@@ -334,7 +352,7 @@ const Home=()=> (
 <div>
   <Section id='case-studies' title='Experience' className='section-bg'>
         <div className='max-w-5xl mx-auto px-4 sm:px-6'>
-          <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level — this is meant to complement my resume, not repeat it.</p>
+          <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level. Think of it as a complement to my resume, not a repeat of it.</p>
           <div className='grid grid-cols-1 gap-5'>
             {focusAreas.map((f,i) => (
               <div key={i} className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
@@ -355,15 +373,16 @@ const Home=()=> (
 
 <Section id='projects' title='Selected Projects' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
-        <div className='grid grid-cols-1 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch'>
           {projects.map((p,i) => (
-            <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{duration:0.5}}>
-              <Card className='hover:shadow-md transition-shadow'>
+            <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{duration:0.5}}
+              className={(i===projects.length-1 && projects.length%2===1) ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''}>
+              <Card className='hover:shadow-md transition-shadow h-full flex flex-col'>
                 <CardHeader><CardTitle className='flex items-center gap-2'><LineChart className='w-5 h-5'/><span>{p.title}</span></CardTitle></CardHeader>
-                <CardContent className='text-sm space-y-4 text-left'>
+                <CardContent className='text-sm space-y-4 text-left flex-1 flex flex-col'>
                   <p className='opacity-90'>{p.summary}</p>
                   <div className='flex gap-2 flex-wrap'>{p.tech.map((t,j)=>(<Badge key={j} variant='outline'>{t}</Badge>))}</div>
-                  <div><Link to={'/projects/'+p.slug} className='inline-flex items-center gap-2 underline'>Read full case study <ArrowRight className='w-4 h-4'/></Link></div>
+                  <div className='mt-auto pt-1'><Link to={'/projects/'+p.slug} className='inline-flex items-center gap-2 underline'>Read full case study <ArrowRight className='w-4 h-4'/></Link></div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -376,7 +395,14 @@ const Home=()=> (
 
     <Section id='skills' title='Skills' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
-      <div className='flex flex-wrap gap-2 justify-center'>{skills.map((s,i)=>(<Badge key={i} variant='secondary' className='text-sm'>{s}</Badge>))}</div>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
+        {skillGroups.map((g,i)=>(
+          <div key={i} className='glass p-5 rounded-2xl'>
+            <div className='text-xs uppercase tracking-wide opacity-60 font-medium mb-3'>{g.group}</div>
+            <div className='flex flex-wrap gap-2'>{g.items.map((s,j)=>(<Badge key={j} variant='secondary' className='text-sm'>{s}</Badge>))}</div>
+          </div>
+        ))}
+      </div>
 
           </div>
       </Section>
@@ -547,7 +573,7 @@ function SqlDemo(){
           {result.rows.length===0 && <div className='text-xs opacity-60 mt-1'>No rows matched.</div>}
         </div>
       )}
-      <div className='mt-3 text-xs opacity-70'>*Runs a simplified SQL subset (SELECT/FROM/WHERE/ORDER BY/LIMIT) against an in-memory sample table — for demonstration, not a full SQL engine.</div>
+      <div className='mt-3 text-xs opacity-70'>*Runs a simplified SQL subset (SELECT/FROM/WHERE/ORDER BY/LIMIT) against an in-memory sample table, for demonstration only, not a full SQL engine.</div>
     </div>
   )
 }
@@ -584,6 +610,10 @@ export default function App(){
       <Route path='/projects/bank' element={<ProjectBank/>} />
       <Route path='/projects/stock' element={<ProjectStock/>} />
       <Route path='/projects/adas' element={<ProjectADAS/>} />
+      <Route path='/projects/forecast' element={<ProjectForecast/>} />
+      <Route path='/projects/nlp' element={<ProjectNLP/>} />
+      <Route path='/projects/account-risk' element={<ProjectAccountRisk/>} />
     </Routes>
   )
 }
+
