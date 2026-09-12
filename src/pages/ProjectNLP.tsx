@@ -118,7 +118,7 @@ const TRANSFORMER_CODE = `class TinyTransformer(nn.Module):
         h = self.encoder(self.embed(x) + self.pos(positions), src_key_padding_mask=mask)
         return self.head(h[:, 0])  # [CLS]-style pooled token
 
-# 87,941 parameters total. Weights are randomly initialized -- no pretrained
+# 87,941 parameters total. Weights are randomly initialized; no pretrained
 # checkpoint is loaded, since huggingface.co is unreachable from this environment.`
 
 export default function Page() {
