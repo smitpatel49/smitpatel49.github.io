@@ -160,23 +160,46 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
   )
 }
 
+// Sitewide ambient backdrop: a subtle, low-density network/constellation canvas.
+// Fixed to the viewport (not the hero) so it reads as one consistent motif across
+// every section instead of a band that stops after the hero, and its size always
+// matches the viewport rather than a hardcoded height (avoids the stretched look
+// on wide screens). Respects prefers-reduced-motion by rendering a single static frame.
 const BackgroundParticles=()=>{
   const ref = useRef<HTMLCanvasElement|null>(null)
   useEffect(()=>{
-    const c=ref.current!; const x=c.getContext('2d')!
-    let w=(c.width=window.innerWidth), h=(c.height=420)
-    const onR=()=>{ w=(c.width=window.innerWidth); h=(c.height=420) }
-    window.addEventListener('resize', onR)
+    const c=ref.current!; const ctx=c.getContext('2d')!
+    const density = 22000 // px^2 per particle — scales count to viewport area
+    const makePts = (w:number,h:number) => {
+      const count = Math.max(28, Math.min(110, Math.round((w*h)/density)))
+      return Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.35,r:Math.random()*1.6+0.5}))
+    }
+    let w=(c.width=window.innerWidth), h=(c.height=window.innerHeight)
     type P={x:number;y:number;vx:number;vy:number;r:number}
-    const pts:P[] = Array.from({length:60},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.7,vy:(Math.random()-0.5)*0.7,r:Math.random()*2+0.6}))
-    let mx=-9999,my=-9999; const onM=(e:MouseEvent)=>{ const r=c.getBoundingClientRect(); mx=e.clientX-r.left; my=e.clientY-r.top }
-    c.addEventListener('mousemove', onM)
+    let pts:P[] = makePts(w,h)
+    const onR=()=>{ w=(c.width=window.innerWidth); h=(c.height=window.innerHeight); pts=makePts(w,h) }
+    window.addEventListener('resize', onR)
+    let mx=-9999,my=-9999; const onM=(e:MouseEvent)=>{ mx=e.clientX; my=e.clientY }
+    window.addEventListener('mousemove', onM)
+    const linkDist = 115
+    const draw = () => {
+      ctx.clearRect(0,0,w,h)
+      for(let i=0;i<pts.length;i++){
+        const p=pts[i]
+        ctx.fillStyle='rgba(120,120,120,0.4)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill()
+        for(let j=i+1;j<pts.length;j++){ const q=pts[j]; const dx=p.x-q.x, dy=p.y-q.y; const d=Math.hypot(dx,dy); if(d<linkDist){ ctx.strokeStyle=`rgba(120,120,120,${0.12*(1-d/linkDist)})`; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke() } }
+        const dm=Math.hypot(p.x-mx,p.y-my); if(dm<130){ ctx.strokeStyle='rgba(120,120,120,0.22)'; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mx,my); ctx.stroke() }
+      }
+    }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let af=0
-    const loop=()=>{ x.clearRect(0,0,w,h); for(let i=0;i<pts.length;i++){ const p=pts[i]; p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1; x.fillStyle='rgba(120,120,120,0.55)'; x.beginPath(); x.arc(p.x,p.y,p.r,0,Math.PI*2); x.fill(); for(let j=i+1;j<pts.length;j++){ const q=pts[j]; const dx=p.x-q.x, dy=p.y-q.y; const d=Math.hypot(dx,dy); if(d<110){ x.strokeStyle='rgba(120,120,120,0.15)'; x.beginPath(); x.moveTo(p.x,p.y); x.lineTo(q.x,q.y); x.stroke(); } } const dm=Math.hypot(p.x-mx,p.y-my); if(dm<120){ x.strokeStyle='rgba(120,120,120,0.25)'; x.beginPath(); x.moveTo(p.x,p.y); x.lineTo(mx,my); x.stroke(); } } af=requestAnimationFrame(loop) }
-    loop()
-    return ()=>{ cancelAnimationFrame(af); window.removeEventListener('resize', onR); c.removeEventListener('mousemove', onM) }
+    if(prefersReduced){ draw() } else {
+      const loop=()=>{ for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1 } draw(); af=requestAnimationFrame(loop) }
+      loop()
+    }
+    return ()=>{ cancelAnimationFrame(af); window.removeEventListener('resize', onR); window.removeEventListener('mousemove', onM) }
   },[])
-  return <canvas ref={ref} className='absolute inset-0 h-[420px] w-full -z-10'/>
+  return <canvas ref={ref} aria-hidden='true' className='pointer-events-none fixed inset-0 -z-10'/>
 }
 
 const NAV_IDS = ['home','about','playground','case-studies','projects','skills','education','contact']
@@ -232,7 +255,6 @@ const Header=()=>{
 
 const Hero=()=>(
   <section id='home' className='container-narrow pt-12 pb-6 relative text-center'>
-    <BackgroundParticles/>
     <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className='flex flex-col gap-6'>
       <div className='flex items-center justify-center'>
         <div>
@@ -250,20 +272,9 @@ const Hero=()=>(
   </section>
 )
 
-function AmbientBackground(){
-  return (
-    <div aria-hidden='true' className='pointer-events-none fixed inset-0 -z-10 overflow-hidden'>
-      <div className='ambient-blob absolute -top-40 -left-32 w-[32rem] h-[32rem] rounded-full bg-accent-400/20 dark:bg-accent-600/25 blur-3xl' style={{animationDelay:'0s'}} />
-      <div className='ambient-blob absolute top-1/4 -right-40 w-[28rem] h-[28rem] rounded-full bg-blue-500/15 dark:bg-accent-500/20 blur-3xl' style={{animationDelay:'-6s'}} />
-      <div className='ambient-blob absolute bottom-24 -left-24 w-[24rem] h-[24rem] rounded-full bg-sky-300/15 dark:bg-sky-400/10 blur-3xl' style={{animationDelay:'-12s'}} />
-      <div className='ambient-blob absolute -bottom-32 right-1/4 w-[26rem] h-[26rem] rounded-full bg-accent-700/10 dark:bg-accent-700/25 blur-3xl' style={{animationDelay:'-18s'}} />
-    </div>
-  )
-}
-
 const Home=()=> (
   <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-    <AmbientBackground/>
+    <BackgroundParticles/>
     <Header/>
     <Hero/>
 
@@ -272,8 +283,8 @@ const Home=()=> (
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p>I’m a data professional who enjoys taking ambiguous, real‑world problems and turning them into dependable systems and clear decisions. My work spans business and data analysis, statistical modeling, and production ML — across consulting, research, and independent projects covering forecasting, risk, NLP, and computer vision.</p>
-            <p>My toolkit includes Python (NumPy/Pandas, scikit‑learn, PyTorch), SQL, modern MLOps (FastAPI, Docker, MLflow, SageMaker), and pragmatic product metrics. I value iteration speed, observability, and making data and models legible to stakeholders.</p>
+            <p>I like problems that don’t come pre-labeled — where the real first step is figuring out what’s actually being asked before reaching for a model or a dashboard. That’s shaped a career that moves fluidly between business and data analysis, statistical modeling, and production ML, depending on what the problem in front of me actually needs. I’ve worked that way across consulting, research, and independent projects spanning forecasting, risk, NLP, and computer vision.</p>
+            <p>My toolkit runs from Python and SQL through modern MLOps (Docker, MLflow, SageMaker) to the reporting layer stakeholders actually read — Power BI, Excel, plain language. I care less about which single label fits me, and more about whether the answer is trustworthy and someone can act on it.</p>
           </div>
           <div>
             <Card>
@@ -329,7 +340,9 @@ const Home=()=> (
               <div key={i} className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
                 <div className='flex items-start justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 pb-3 mb-3'>
                   <h3 className='text-lg font-semibold'>{f.theme}</h3>
-                  <div className='text-xs uppercase tracking-wide opacity-60 whitespace-nowrap mt-1'>{f.status}</div>
+                  {f.status === 'Current' && (
+                    <div className='text-xs uppercase tracking-wide text-accent-600 dark:text-accent-400 font-medium whitespace-nowrap mt-1'>Ongoing</div>
+                  )}
                 </div>
                 <p className='text-sm opacity-90'>{f.summary}</p>
                 <div className='mt-3 text-xs opacity-70'>Focus: {f.tags.join(' · ')}</div>
