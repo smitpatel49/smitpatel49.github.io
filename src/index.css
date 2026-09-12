@@ -49,6 +49,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
+/* Ambient background blobs (fills empty side gutters on wide screens) */
+@keyframes ambient-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(20px, -24px) scale(1.05); }
+  66%  { transform: translate(-16px, 18px) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.ambient-blob {
+  animation: ambient-drift 24s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob { animation: none; }
+}
+
 /* Global subtle radial vignette for dark mode */
 body::before {
   content: "";
