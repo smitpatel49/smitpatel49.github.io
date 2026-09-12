@@ -5,14 +5,14 @@ import { Routes, Route, Link } from 'react-router-dom'
 import { Button } from './components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { Badge } from './components/ui/badge'
-import { Mail, Github, Linkedin, ArrowRight, Cpu, LineChart, Boxes, Sun, Moon, Menu, X } from 'lucide-react'
+import { Mail, Github, Linkedin, ArrowRight, Cpu, LineChart, Boxes, Users, Sun, Moon, Menu, X } from 'lucide-react'
 import ProjectMNA from './pages/ProjectMNA'
 import ProjectBank from './pages/ProjectBank'
 import ProjectStock from './pages/ProjectStock'
 import ProjectADAS from './pages/ProjectADAS'
 import ProjectAnalytics from './pages/ProjectAnalytics'
 
-const TITLE = 'AI/ML Engineer'
+const TITLE = 'Data Scientist & Analytics Professional'
 const LOCATION = 'Chicago, IL'
 const EMAIL = 'smit@itjobinbox.com'
 const GITHUB = 'https://github.com/smitpatel49'
@@ -25,20 +25,16 @@ const skills = [
   'Plotly','Tableau','Power BI','Excel/Google Sheets','A/B Testing','Statistics',
 ]
 
-const experiences = [
-  { company: 'Cigna', role: 'AI/ML Engineer', period: 'Jun 2023 – Present', location: 'Illinois (Hybrid)',
-    bullets: [
-      'Deployed ML pipeline to predict patient readmission; reduced readmissions by 15%.',
-      'Fine-tuned BERT/GPT models to extract medical entities; cut manual data entry by 40%.',
-      'Built anomaly detection (Isolation Forest/Autoencoders); lowered fraudulent claims by ~20%.',
-      'Set up MLOps with MLflow, Docker, AWS SageMaker; live monitoring via Prometheus.',
-    ], tags: ['NLP','Anomaly Detection','MLOps'] },
-  { company: 'Infinite Infolab', role: 'ML Engineer', period: 'Jul 2020 – Aug 2021', location: 'India (Onsite)',
-    bullets: [
-      'Built churn model (LightGBM) with Bayesian tuning; improved campaign targeting by 22%.',
-      'Deployed real-time inference with FastAPI + Docker; cut latency by 35%.',
-      'Created dashboards in Plotly/Seaborn; accelerated stakeholder decisions.',
-    ], tags: ['Churn','Deployment','Visualization'] },
+const focusAreas = [
+  { theme: 'Business & Data Analysis', status: 'Current',
+    summary: 'Ongoing work at Sputnik, an IT staffing company, turning staffing and account activity into governed data models, stakeholder-reviewed requirements, and decision-ready reporting — surfacing which client relationships are profitable and which need attention. Builds on an earlier analyst engagement there, and a business-analysis thread also ran through a later consulting role.',
+    tags: ['Business Analysis','Data Analysis','Requirements & UAT','Dashboards'] },
+  { theme: 'Machine Learning & AI Systems', status: 'Past',
+    summary: 'A consulting engagement at Sunrise Electronics Inc., a PCB fabrication company, centered on a multimodal specification pipeline — reconciling CAM files, PDFs, and OCR output into a single confidence-scored model with human review built into the workflow. The same engagement carried data-science and business-analysis components alongside it, making it the most technically versatile role in my background.',
+    tags: ['AI/ML Engineering','Document Intelligence','Data Science','Consulting'] },
+  { theme: 'Research & Data', status: 'Past',
+    summary: "Research and data work at CHARUSAT Research Center, held alongside undergraduate study at Charotar University of Science and Technology — building a consistent reporting structure across a multi-project research portfolio, and designing and analyzing stakeholder surveys with an eye toward response bias and sample size.",
+    tags: ['Research','Data Analysis','Survey Design'] },
 ]
 
 const education = [
@@ -142,7 +138,7 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
           <a href='/' onClick={onClose} className='px-4 py-3 bg-white/60 dark:bg-neutral-900/60 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Home</a>
           <a href='/#about' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>About</a>
           <a href='/#playground' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Playground</a>
-          <a href='/#case-studies' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Case Studies</a>
+          <a href='/#case-studies' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Experience</a>
           <a href='/#projects' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Projects</a>
           <a href='/#skills' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Skills</a>
           <a href='/#education' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Education</a>
@@ -216,7 +212,7 @@ const Header=()=>{
           <a href='/' className={navCls('home')}>Home</a>
           <a href='/#about' className={navCls('about')}>About</a>
           <a href='/#playground' className={navCls('playground')}>Playground</a>
-          <a href='/#case-studies' className={navCls('case-studies')}>Case Studies</a>
+          <a href='/#case-studies' className={navCls('case-studies')}>Experience</a>
           <a href='/#projects' className={navCls('projects')}>Projects</a>
           <a href='/#skills' className={navCls('skills')}>Skills</a>
           <a href='/#education' className={navCls('education')}>Education</a>
@@ -244,19 +240,30 @@ const Hero=()=>(
           <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>{TITLE} · {LOCATION}</p>
         </div>
       </div>
-      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I build reliable, production-grade ML and analytics systems end-to-end — from data pipelines and modeling to deployment, monitoring, and product impact. Work spans forecasting & simulation, computer vision, NLP, and decisioning with a strong MLOps backbone.</p>
+      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I turn ambiguous business problems into decisions and systems — through data analysis, statistical modeling, and production ML. I work the full arc: scoping the business question, exploring and analyzing the data, building the model or dashboard, and shipping it into something people actually use.</p>
       <div className='flex gap-3 justify-center flex-wrap'>
         <a href='#projects'><Button className='group'>View Projects <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-0.5 transition-transform'/></Button></a>
-        <a href='/Smit-Resume.pdf' target='_blank' rel='noreferrer'><Button variant='secondary'>Download Resume</Button></a>
         <a href={'mailto:'+EMAIL}><Button variant='outline'>Email me</Button></a>
       </div>
-      <div className='flex gap-2 flex-wrap mt-2 justify-center'>{['NLP','Time-Series','MLOps','Real-time Inference','Dashboards'].map((t,i)=>(<Pill key={i}>{t}</Pill>))}</div>
+      <div className='flex gap-2 flex-wrap mt-2 justify-center'>{['NLP','Time-Series','MLOps','A/B Testing','Dashboards','Business Analytics'].map((t,i)=>(<Pill key={i}>{t}</Pill>))}</div>
     </motion.div>
   </section>
 )
 
+function AmbientBackground(){
+  return (
+    <div aria-hidden='true' className='pointer-events-none fixed inset-0 -z-10 overflow-hidden'>
+      <div className='ambient-blob absolute -top-40 -left-32 w-[32rem] h-[32rem] rounded-full bg-accent-400/20 dark:bg-accent-600/25 blur-3xl' style={{animationDelay:'0s'}} />
+      <div className='ambient-blob absolute top-1/4 -right-40 w-[28rem] h-[28rem] rounded-full bg-blue-500/15 dark:bg-accent-500/20 blur-3xl' style={{animationDelay:'-6s'}} />
+      <div className='ambient-blob absolute bottom-24 -left-24 w-[24rem] h-[24rem] rounded-full bg-sky-300/15 dark:bg-sky-400/10 blur-3xl' style={{animationDelay:'-12s'}} />
+      <div className='ambient-blob absolute -bottom-32 right-1/4 w-[26rem] h-[26rem] rounded-full bg-accent-700/10 dark:bg-accent-700/25 blur-3xl' style={{animationDelay:'-18s'}} />
+    </div>
+  )
+}
+
 const Home=()=> (
-  <div className='min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
+  <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
+    <AmbientBackground/>
     <Header/>
     <Hero/>
 
@@ -265,8 +272,8 @@ const Home=()=> (
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p>I’m an AI/ML engineer who enjoys taking ambiguous, real‑world problems and turning them into dependable systems. I’ve shipped models and services across healthcare and analytics — spanning forecasting & simulation, risk and marketing decisioning, NLP, and computer vision — with clear SLAs and ownership over data, modeling, and runtime.</p>
-            <p>My toolkit includes Python (NumPy/Pandas, scikit‑learn, PyTorch), SQL, modern MLOps (FastAPI, Docker, MLflow, SageMaker), and pragmatic product metrics. I value iteration speed, observability, and making models legible to the business.</p>
+            <p>I’m a data professional who enjoys taking ambiguous, real‑world problems and turning them into dependable systems and clear decisions. My work spans business and data analysis, statistical modeling, and production ML — across consulting, research, and independent projects covering forecasting, risk, NLP, and computer vision.</p>
+            <p>My toolkit includes Python (NumPy/Pandas, scikit‑learn, PyTorch), SQL, modern MLOps (FastAPI, Docker, MLflow, SageMaker), and pragmatic product metrics. I value iteration speed, observability, and making data and models legible to stakeholders.</p>
           </div>
           <div>
             <Card>
@@ -275,6 +282,7 @@ const Home=()=> (
                 <div className='flex items-center gap-2'><Boxes className='w-4 h-4'/> End-to-end: data → model → API → monitoring</div>
                 <div className='flex items-center gap-2'><LineChart className='w-4 h-4'/> Domains: forecasting/simulation, CV, NLP, decisioning</div>
                 <div className='flex items-center gap-2'><Cpu className='w-4 h-4'/> Ops: CI/CD, containerization, metrics, alerts</div>
+                <div className='flex items-center gap-2'><Users className='w-4 h-4'/> Business partnership: turning ambiguous asks into KPIs, analysis, and dashboards</div>
               </CardContent>
             </Card>
           </div>
@@ -313,37 +321,20 @@ const Home=()=> (
     <div>
       
 <div>
-  <Section id='case-studies' title='Case Studies (Impact)' className='section-bg'>
+  <Section id='case-studies' title='Experience' className='section-bg'>
         <div className='max-w-5xl mx-auto px-4 sm:px-6'>
+          <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level — this is meant to complement my resume, not repeat it.</p>
           <div className='grid grid-cols-1 gap-5'>
-            {/* Cigna */}
-            <div className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
-              <div className='flex items-start justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 pb-3 mb-3'>
-                <h3 className='text-lg font-semibold'>Cigna</h3>
-                <div className='text-sm opacity-70'>Jun 2023 – Present</div>
+            {focusAreas.map((f,i) => (
+              <div key={i} className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
+                <div className='flex items-start justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 pb-3 mb-3'>
+                  <h3 className='text-lg font-semibold'>{f.theme}</h3>
+                  <div className='text-xs uppercase tracking-wide opacity-60 whitespace-nowrap mt-1'>{f.status}</div>
+                </div>
+                <p className='text-sm opacity-90'>{f.summary}</p>
+                <div className='mt-3 text-xs opacity-70'>Focus: {f.tags.join(' · ')}</div>
               </div>
-              <ul className='list-disc pl-6 space-y-2 text-sm'>
-                <li>Deployed ML pipeline to predict patient readmission; reduced readmissions by 15%.</li>
-                <li>Fine-tuned BERT/GPT models to extract medical entities; cut manual data entry by 40%.</li>
-                <li>Built anomaly detection (Isolation Forest/Autoencoders); lowered fraudulent claims by ~20%.</li>
-                <li>Set up MLOps with MLflow, Docker, AWS SageMaker; live monitoring via Prometheus.</li>
-              </ul>
-              <div className='mt-3 text-xs opacity-70'>Focus: NLP · Anomaly Detection · MLOps</div>
-            </div>
-
-            {/* Infinite Infolab */}
-            <div className='glass transition-shadow hover:shadow-md hover:ring-1 hover:ring-accent-500/25 p-5 rounded-2xl'>
-              <div className='flex items-start justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 pb-3 mb-3'>
-                <h3 className='text-lg font-semibold'>Infinite Infolab</h3>
-                <div className='text-sm opacity-70'>Jul 2020 – Aug 2021</div>
-              </div>
-              <ul className='list-disc pl-6 space-y-2 text-sm'>
-                <li>Built churn model (LightGBM) with Bayesian tuning; improved campaign targeting by 22%.</li>
-                <li>Deployed real-time inference with FastAPI + Docker; cut latency by 35%.</li>
-                <li>Created dashboards in Plotly/Seaborn; accelerated stakeholder decisions.</li>
-              </ul>
-              <div className='mt-3 text-xs opacity-70'>Focus: Churn · Deployment · Visualization</div>
-            </div>
+            ))}
           </div>
         </div>
       </Section>
@@ -552,13 +543,13 @@ function extractNER(t:string){
   const res: {text:string;label:string}[] = []
   const push=(m:RegExpMatchArray|null,label:string)=>{ if(!m) return; m.forEach(v=>res.push({text:v,label})) }
   push(t.match(/\b\d{4}-\d{2}-\d{2}\b/g), 'DATE')
-  push(t.match(/\bCigna\b/g), 'ORG')
+  push(t.match(/\bNorthwind\b/g), 'ORG')
   push(t.match(/\b\d{3}-\d{2}\b/g), 'CLAIM_ID')
   push(t.match(/\b[A-Z][a-z]+\s[A-Z][a-z]+\b/g), 'PERSON')
   return res
 }
 function NerDemo(){
-  const [text,setText] = useState('Smit Patel visited Cigna on 2025-02-17 about claim 000-01.')
+  const [text,setText] = useState('Smit Patel visited Northwind on 2025-02-17 about claim 000-01.')
   const ents = extractNER(text)
   return (
     <div>
