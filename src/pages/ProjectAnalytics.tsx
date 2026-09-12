@@ -155,7 +155,7 @@ export default function ProjectAnalytics() {
         <h1 className='section-title'>Customer Retention & Revenue Analytics</h1>
         <p className='text-center opacity-80 max-w-2xl mx-auto'>SQL-driven cohort retention and purchase-funnel analysis, built into an interactive dashboard for a stakeholder audience.</p>
         <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['SQL','PostgreSQL','Cohort Analysis','Funnel Analysis','Dashboarding','Excel'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
+          {['SQL','PostgreSQL','Cohort Analysis','Funnel Analysis','Dashboarding'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
         </div>
 
         <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
