@@ -151,7 +151,7 @@ export default function Page() {
             <CardHeader><CardTitle>What the Model Leans On</CardTitle></CardHeader>
             <CardContent className='text-sm space-y-2'>
               <FeatureImportance />
-              <p className='opacity-90'>Recent history dominates: the two longest lags (7 and 28 days back) and short-term volatility (<code>roll_std_7</code>) matter more than the calendar features. <code>is_promo</code> and <code>is_weekend</code> rank low individually, mostly because their effect is already captured indirectly through the lag and rolling features.</p>
+              <p className='opacity-90'>Recent history dominates: the two most important lags (28 and 7 days back) and short-term volatility (<code>roll_std_7</code>) matter more than the calendar features. <code>is_promo</code> and <code>is_weekend</code> rank low individually, mostly because their effect is already captured indirectly through the lag and rolling features.</p>
             </CardContent>
           </Card>
 
