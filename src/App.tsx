@@ -23,7 +23,6 @@ const LOCATION = 'Chicago, IL'
 const EMAIL = 'smit@itjobinbox.com'
 const GITHUB = 'https://github.com/smitpatel49'
 const LINKEDIN = 'https://www.linkedin.com/in/smitpatel7/'
-const FORM_ENDPOINT = ''
 
 const skillGroups = [
   { group: 'Languages & Core', items: ['Python','SQL','Pandas','NumPy','Statistics'] },
@@ -68,6 +67,46 @@ const Section=({id,title,children,className}:{id:string;title:string;children:Re
 )
 
 const Pill=({children}:{children:React.ReactNode})=>(<span className='text-xs md:text-sm rounded-full border px-3 py-1 bg-white/60 dark:bg-white/5 backdrop-blur'>{children}</span>)
+
+// A plain GET-method form posting to a mailto: action is unreliable across
+// browsers (Chrome in particular often just ignores the query string), so
+// this builds the mailto: link by hand from the entered fields instead.
+const ContactForm = () => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const data = new FormData(e.currentTarget)
+    const name = String(data.get('name') || '').trim()
+    const email = String(data.get('email') || '').trim()
+    const subject = String(data.get('subject') || '').trim() || 'Message from portfolio site'
+    const message = String(data.get('message') || '').trim()
+    const body = `${message}\n\n---\nFrom: ${name}${email ? ' <' + email + '>' : ''}`
+    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+  return (
+    <form onSubmit={handleSubmit} className='space-y-3'>
+      <div className='grid grid-cols-1 gap-3'>
+        <div>
+          <label htmlFor='contact-name' className='sr-only'>Name</label>
+          <input id='contact-name' name='name' placeholder='Name' className='rounded-xl border p-3 bg-transparent w-full' required/>
+        </div>
+        <div>
+          <label htmlFor='contact-email' className='sr-only'>Email</label>
+          <input id='contact-email' name='email' type='email' placeholder='Email' className='rounded-xl border p-3 bg-transparent w-full' required/>
+        </div>
+      </div>
+      <div>
+        <label htmlFor='contact-subject' className='sr-only'>Subject (optional)</label>
+        <input id='contact-subject' name='subject' placeholder='Subject (optional)' className='rounded-xl border p-3 bg-transparent w-full'/>
+      </div>
+      <div>
+        <label htmlFor='contact-message' className='sr-only'>Your message</label>
+        <textarea id='contact-message' name='message' placeholder='Your message' className='rounded-xl border p-3 bg-transparent w-full h-32' required/>
+      </div>
+      <button type='submit' className='bg-accent-600 text-white hover:bg-accent-700 rounded-2xl px-4 py-2 text-sm'>Send message</button>
+      <p className='text-xs opacity-60'>Opens your email client with the message pre-filled.</p>
+    </form>
+  )
+}
 
 const ThemeToggle = () => {
   const getInitial = () => {
@@ -368,17 +407,7 @@ const Home=()=>{
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
       <div className='grid grid-cols-1 gap-6'>
         <div className='w-full'>
-          {/* To enable Formspree: set FORM_ENDPOINT to your endpoint */}
-          <form method={FORM_ENDPOINT ? 'POST' : 'GET'} action={FORM_ENDPOINT ? FORM_ENDPOINT : ('mailto:'+EMAIL)} className='space-y-3'>
-            <div className='grid grid-cols-1 gap-3'>
-              <input name='name' placeholder='Name' className='rounded-xl border p-3 bg-transparent' required/>
-              <input name='email' type='email' placeholder='Email' className='rounded-xl border p-3 bg-transparent' required/>
-            </div>
-            <input name='subject' placeholder='Subject (optional)' className='rounded-xl border p-3 bg-transparent w-full'/>
-            <textarea name='message' placeholder='Your message' className='rounded-xl border p-3 bg-transparent w-full h-32' required/>
-            {FORM_ENDPOINT && <input type='hidden' name='_subject' value='New message from portfolio site'/>}
-            <button className='bg-accent-600 text-white hover:bg-accent-700 rounded-2xl px-4 py-2 text-sm'>Send message</button>
-          </form>
+          <ContactForm/>
         </div>
         <div className='w-full flex flex-col items-center gap-3'>
           <a className='inline-flex items-center gap-2 underline' href={'mailto:'+EMAIL}><Mail className='w-5 h-5'/> {EMAIL}</a>
