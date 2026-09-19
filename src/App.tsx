@@ -15,6 +15,8 @@ import ProjectForecast from './pages/ProjectForecast'
 import ProjectNLP from './pages/ProjectNLP'
 import ProjectAccountRisk from './pages/ProjectAccountRisk'
 import AmbientBackground from './components/AmbientBackground'
+import { projects } from './data/projects'
+import { useHeadMeta } from './hooks/useHeadMeta'
 
 const TITLE = 'Data Scientist & Analytics Professional'
 const LOCATION = 'Chicago, IL'
@@ -55,17 +57,6 @@ const education = [
       'Founding Chairperson of IEEE Student Branch.',
       'Member of the Computer Society of India and executive member of LinkedIn Local Chapter Anand.',
     ] },
-]
-
-const projects = [
-  { slug:'analytics', title: 'Customer Retention & Revenue Analytics', summary: 'SQL cohort retention & purchase-funnel analysis, presented as an interactive dashboard.', tech:['SQL','PostgreSQL','Cohort Analysis','Dashboarding'] },
-  { slug:'mna', title: 'Simulating Company Merger/Acquisition', summary: '20,000-trial Monte Carlo on deal accretion, with regression-based sensitivity analysis.', tech:['Python','NumPy','Monte Carlo','scikit-learn'] },
-  { slug:'bank', title: 'Bank Marketing Classification', summary: 'Calibrated XGBoost scoring model vs. a Random Forest baseline, tuned to a call-center capacity constraint.', tech:['Python','XGBoost','scikit-learn','Calibration','FastAPI'] },
-  { slug:'stock', title: 'Simulating a Buy/Sell Call for a Stock', summary: 'Regime-aware block bootstrap over 3,000 paths; VaR/CVaR and a fan chart.', tech:['Python','NumPy','Bootstrap Simulation','Risk (VaR/CVaR)'] },
-  { slug:'adas', title: 'Lane & Road-Sign Detection for Self-Driving', summary: 'Perception → fusion → control architecture, validated with a real OpenCV pipeline on synthetic scenes.', tech:['Python','OpenCV','Segmentation','Object Detection','Control Systems'] },
-  { slug:'forecast', title: 'Daily Demand Forecasting', summary: 'LightGBM forecasting with lag/rolling features, benchmarked honestly against a seasonal-naive baseline.', tech:['Python','Pandas','LightGBM','Time-Series'] },
-  { slug:'nlp', title: 'Support Ticket Routing (NLP)', summary: 'TF-IDF baseline vs. a small transformer trained from scratch, with an honest look at where each one wins.', tech:['Python','scikit-learn','PyTorch','NLP'] },
-  { slug:'account-risk', title: 'Account Health & Renewal-Risk Reporting', summary: 'A stakeholder-governed at-risk definition turned into a KPI dashboard for CS, AM, and Renewals.', tech:['Business Analysis','Requirements Gathering','Data Modeling','KPI Design'] },
 ]
 
 const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>(
@@ -138,8 +129,8 @@ const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
       >
         <div className='flex items-center justify-between mb-4'>
           <div className='font-semibold text-base'>Menu</div>
-          <button onClick={onClose} className='rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
-            <X className='w-6 h-6'/>
+          <button onClick={onClose} aria-label='Close menu' className='rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
+            <X className='w-6 h-6' aria-hidden='true'/>
           </button>
         </div>
         <nav className='grid text-base rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800'>
@@ -195,8 +186,8 @@ const Header=()=>{
   return (
     <div className='sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/40 dark:bg-neutral-900/60 border-b'>
       <div className='container-narrow h-14 grid grid-cols-[auto,1fr,auto] items-center gap-3'>
-        <button onClick={()=>setOpen(true)} className='xl:hidden rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
-          <Menu className='w-6 h-6'/>
+        <button onClick={()=>setOpen(true)} aria-label='Open menu' className='xl:hidden rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
+          <Menu className='w-6 h-6' aria-hidden='true'/>
         </button>
         <nav className='hidden xl:flex justify-center gap-5 text-sm whitespace-nowrap'>
           <a href='/' className={navCls('home')}>Home</a>
@@ -210,9 +201,9 @@ const Header=()=>{
         </nav>
         <div className='justify-self-end flex items-center gap-2'>
           <ThemeToggle/>
-          <a href={'mailto:'+EMAIL}><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Mail className='w-6 h-6' strokeWidth={2.1}/></Button></a>
-          <a href={GITHUB} target='_blank' rel='noreferrer'><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Github className='w-6 h-6' strokeWidth={2.1}/></Button></a>
-          <a href={LINKEDIN} target='_blank' rel='noreferrer'><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Linkedin className='w-6 h-6' strokeWidth={2.1}/></Button></a>
+          <a href={'mailto:'+EMAIL} aria-label='Email Smit Patel'><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Mail className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
+          <a href={GITHUB} target='_blank' rel='noreferrer' aria-label="Smit Patel's GitHub (opens in a new tab)"><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Github className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
+          <a href={LINKEDIN} target='_blank' rel='noreferrer' aria-label="Smit Patel's LinkedIn (opens in a new tab)"><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Linkedin className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
         </div>
         <MobileMenu open={open} onClose={()=>setOpen(false)} />
       </div>
@@ -235,10 +226,14 @@ const Hero=()=>(
   </section>
 )
 
-const Home=()=> (
+const Home=()=>{
+  useHeadMeta()
+  return (
   <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
+    <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
     <AmbientBackground/>
     <Header/>
+    <main id='main-content'>
     <Hero/>
 
     <Section id='about' title='About' className='section-bg'>
@@ -317,7 +312,7 @@ const Home=()=> (
             <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{duration:0.5}}
               className={(i===projects.length-1 && projects.length%2===1) ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''}>
               <Card className='hover:shadow-md transition-shadow h-full flex flex-col'>
-                <CardHeader><CardTitle className='flex items-center gap-2'><LineChart className='w-5 h-5'/><span>{p.title}</span></CardTitle></CardHeader>
+                <CardHeader><CardTitle className='flex items-center gap-2'><span className='inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl bg-accent-500/10 text-accent-600 dark:text-accent-400'><p.icon className='w-4 h-4' aria-hidden='true'/></span><span>{p.title}</span></CardTitle></CardHeader>
                 <CardContent className='text-sm space-y-4 text-left flex-1 flex flex-col'>
                   <p className='opacity-90'>{p.summary}</p>
                   <div className='flex gap-2 flex-wrap'>{p.tech.map((t,j)=>(<Badge key={j} variant='outline'>{t}</Badge>))}</div>
@@ -394,10 +389,12 @@ const Home=()=> (
     
           </div>
       </Section>
+    </main>
 
     <footer className='container-narrow pb-16 text-xs opacity-60 text-center'>© {new Date().getFullYear()} Smit Patel</footer>
   </div>
-)
+  )
+}
 
 function sigmoid(x:number){ return 1/(1+Math.exp(-x)) }
 function ChurnDemo(){
