@@ -1,176 +1,114 @@
+import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-import React from 'react'
-import { ProjectBreadcrumb, ProjectPager } from '../components/ProjectNav'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import AmbientBackground from '../components/AmbientBackground'
-import { useHeadMeta } from '../hooks/useHeadMeta'
-
-const ACTUAL = '#0f172a'
-const GBM = '#2563eb'
-const NAIVE = '#94a3b8'
-
-const TEST_ACTUAL = [180.0,151.0,160.1,143.2,153.4,171.1,199.4,158.8,168.9,153.5,154.1,152.3,170.1,172.0,180.3,147.6,158.4,140.6,146.8,152.5,173.6,176.3,147.1,142.5,132.5,141.3,143.9,157.4,161.4,155.8,165.7,133.4,152.5,156.7,160.4,159.5,140.7,137.7,131.3,123.3,137.0,164.1,149.6,131.3,133.3,138.7,134.1,141.6,165.9,163.0,137.8,138.8,139.5,181.7,149.9,157.2,150.4,120.5,133.4,113.3,119.3,153.3,156.6,156.4,125.3,114.1,120.8,125.0,139.9,156.9,137.5,128.7,113.4,124.9,122.0,130.4,142.7,137.2,121.3,136.5,118.3,118.2,116.8,135.3,135.1,116.2,131.7,116.5,130.8,135.1]
-const TEST_GBM = [171.9,167.3,163.0,156.3,144.9,162.2,176.9,174.7,154.5,162.6,149.1,156.0,169.9,176.3,162.7,147.7,145.9,147.5,142.3,170.1,169.4,156.9,150.6,147.8,141.9,140.7,155.9,163.5,163.3,142.1,142.7,136.5,139.5,150.4,158.9,157.5,145.1,139.9,136.3,138.1,146.1,147.0,153.4,133.3,130.0,130.2,135.0,141.3,148.5,145.5,133.8,133.2,135.6,201.5,145.3,157.9,149.4,137.2,134.3,136.1,138.5,139.4,147.7,146.1,130.1,124.2,113.4,127.0,135.7,145.7,140.8,116.4,119.7,114.0,122.8,135.4,143.2,136.2,117.4,114.3,113.6,123.8,126.0,133.8,131.0,108.9,113.7,106.6,112.6,127.1]
-const TEST_NAIVE = [170.3,172.2,166.3,159.1,152.2,166.3,176.5,180.0,151.0,160.1,143.2,153.4,171.1,199.4,158.8,168.9,153.5,154.1,152.3,170.1,172.0,180.3,147.6,158.4,140.6,146.8,152.5,173.6,176.3,147.1,142.5,132.5,141.3,143.9,157.4,161.4,155.8,165.7,133.4,152.5,156.7,160.4,159.5,140.7,137.7,131.3,123.3,137.0,164.1,149.6,131.3,133.3,138.7,134.1,141.6,165.9,163.0,137.8,138.8,139.5,181.7,149.9,157.2,150.4,120.5,133.4,113.3,119.3,153.3,156.6,156.4,125.3,114.1,120.8,125.0,139.9,156.9,137.5,128.7,113.4,124.9,122.0,130.4,142.7,137.2,121.3,136.5,118.3,118.2,116.8]
-
-function ForecastChart(){
-  const W=680, H=280, padL=40, padR=10, padT=14, padB=26
-  const plotW=W-padL-padR, plotH=H-padT-padB
-  const n = TEST_ACTUAL.length
-  const all = [...TEST_ACTUAL, ...TEST_GBM, ...TEST_NAIVE]
-  const yMin = Math.floor(Math.min(...all)/10)*10, yMax = Math.ceil(Math.max(...all)/10)*10
-  const sx = (i:number) => padL + (i/(n-1))*plotW
-  const sy = (v:number) => padT + (1-(v-yMin)/(yMax-yMin))*plotH
-  const path = (arr:number[]) => arr.map((v,i)=>`${i===0?'M':'L'} ${sx(i).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ')
-  const yTicks = [yMin, Math.round((yMin+yMax)/2), yMax]
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Actual demand vs. LightGBM and seasonal-naive forecasts over a 90-day holdout'>
-        {yTicks.map(v=>(
-          <g key={v}>
-            <line x1={padL} y1={sy(v)} x2={W-padR} y2={sy(v)} stroke='currentColor' strokeOpacity={0.08} />
-            <text x={padL-6} y={sy(v)+3} fontSize='9' textAnchor='end' fill='currentColor' opacity={0.6}>{v}</text>
-          </g>
-        ))}
-        <path d={path(TEST_NAIVE)} fill='none' stroke={NAIVE} strokeWidth={1.5} strokeDasharray='3 3' opacity={0.8} />
-        <path d={path(TEST_GBM)} fill='none' stroke={GBM} strokeWidth={1.8} />
-        <path d={path(TEST_ACTUAL)} fill='none' stroke={ACTUAL} strokeWidth={1.8} opacity={0.85} />
-        <text x={padL} y={H-6} fontSize='9' fill='currentColor' opacity={0.55}>day 1 of holdout</text>
-        <text x={W-padR} y={H-6} fontSize='9' textAnchor='end' fill='currentColor' opacity={0.55}>day 90</text>
-      </svg>
-      <div className='flex gap-4 justify-center text-xs mt-1 opacity-80 flex-wrap'>
-        <span className='flex items-center gap-1'><span className='w-3 h-0.5 inline-block' style={{background:ACTUAL}}/> Actual demand</span>
-        <span className='flex items-center gap-1'><span className='w-3 h-0.5 inline-block' style={{background:GBM}}/> LightGBM forecast</span>
-        <span className='flex items-center gap-1'><span className='w-3 h-0.5 inline-block border-t border-dashed' style={{borderColor:NAIVE}}/> Seasonal-naive forecast</span>
-      </div>
-    </div>
-  )
-}
-
-const FEATURES: [string, number][] = [
-  ['lag_28', 627], ['lag_7', 602], ['doy', 601], ['roll_std_7', 592], ['lag_1', 588], ['roll_std_28', 502],
-]
-
-function FeatureImportance(){
-  const W=520, H=FEATURES.length*36+16, labelW=90
-  const maxV = Math.max(...FEATURES.map(([,v])=>v))
-  const plotW = W-labelW-50
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='LightGBM feature importance, top 6 features'>
-        {FEATURES.map(([name,val],i)=>{
-          const y=10+i*36, w=(val/maxV)*plotW
-          return (
-            <g key={name}>
-              <text x={labelW-8} y={y+15} fontSize='11' textAnchor='end' fill='currentColor' opacity={0.8} fontFamily='monospace'>{name}</text>
-              <rect x={labelW} y={y} width={w} height={20} rx={3} fill={GBM} fillOpacity={0.85}>
-                <title>{name}: {val} splits</title>
-              </rect>
-              <text x={labelW+w+6} y={y+15} fontSize='10' fill='currentColor' opacity={0.7}>{val}</text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
-const FEATURE_CODE = `for lag in [1, 7, 14, 28]:
-    df[f'lag_{lag}'] = df.groupby('store_id')['units'].shift(lag)
-for win in [7, 28]:
-    df[f'roll_mean_{win}'] = df.groupby('store_id')['units'].shift(1).rolling(win).mean()
-    df[f'roll_std_{win}']  = df.groupby('store_id')['units'].shift(1).rolling(win).std()
-df['dow'], df['doy'], df['month'] = df.date.dt.dayofweek, df.date.dt.dayofyear, df.date.dt.month
-df['is_weekend'], df['is_promo'] = df.dow.isin([5,6]).astype(int), df.promo_flag
-
-model = lgb.LGBMRegressor(n_estimators=400, learning_rate=0.03, num_leaves=31, min_child_samples=20)
-model.fit(X_train, y_train)
-naive_forecast = df['units'].shift(7)   # this week = same weekday, last week`
+const IMG = '/projects/forecast/'
 
 export default function Page() {
-  useHeadMeta({ title: 'Daily Demand Forecasting', description: 'LightGBM forecasting with lag/rolling features, benchmarked honestly against a seasonal-naive baseline.', path: '/projects/forecast' })
   return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
-      <AmbientBackground/>
-      <main id='main-content'>
-      <div className='section'>
-        <div className='section-stripe'></div>
-        <ProjectBreadcrumb slug='forecast' />
-        <h1 className='section-title'>Daily Demand Forecasting</h1>
-        <p className='text-center opacity-80 max-w-2xl mx-auto'>Gradient-boosted forecasting with lag and rolling-window features, benchmarked against the seasonal-naive baseline it actually has to beat.</p>
-        <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['Python','Pandas','LightGBM','Time-Series','Feature Engineering'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
-        </div>
+    <CaseStudyPage slug='forecast' lede='A daily forecast for each of the next seven days, for every store and category, plus stock levels that actually hit their service target, tested the way it would be used: retrained every four weeks and scored on forecasts made before the actuals were known.'>
 
-        <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
-          <Card>
-            <CardHeader><CardTitle>Business Question</CardTitle></CardHeader>
-            <CardContent className='text-sm leading-relaxed space-y-2'>
-              <p className='opacity-90'>Inventory and staffing decisions run on tomorrow's demand, not last year's average. A forecasting model only earns its keep if it beats the cheap baseline planners already use in its absence: assume this week looks like last week. This project builds that comparison honestly, on the same holdout period, rather than reporting the model's accuracy in isolation.</p>
-              <p className='opacity-70 text-xs'>The three years of daily demand are ones I generated myself (trend, weekly seasonality, promo spikes, noise), rather than a public retail series. Mostly that's so I actually know the ground truth behind the numbers instead of inheriting someone else's dataset without knowing how it was collected or licensed. Past that point, the feature engineering, the seasonal-naive baseline, and the LightGBM run are all real, evaluated on a final 90 days the model never saw during training.</p>
-            </CardContent>
-          </Card>
+      <Block title='Overview'>
+        <p>A retailer that reorders weekly needs, each morning, a forecast for each of the next seven days and a sense of how wrong it might be. A replenishment planner would read the point forecast to see the week ahead and stock to the calibrated 90th or 95th percentile for a 90% or 95% in-stock target.</p>
+        <Bullets items={[
+          <><b>One global model per horizon:</b> LightGBM across all series for each of horizons 1–7, predicting sales as a ratio to the recent level, with quantile models calibrated by split-conformal prediction.</>,
+          <><b>Leakage-safe:</b> features use sales up to the forecast origin only, plus planned promotions, holidays and closing days for the target day. A test scrambles every sale after the origin and checks no feature changes.</>,
+          <><b>Rolling-origin backtest:</b> four folds of four weeks over the last 16 weeks of the data, against damped Holt-Winters and two naive baselines.</>,
+        ]} />
+        <p>The data: 12 simulated series (4 stores × 3 categories, daily, 2023–2025) with a known true mean, so the model is measured against the best any forecast could do; and 14 real series built from Online Retail II, a UK online gift wholesaler’s invoices (Chen, 2019, CC BY 4.0).</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Approach</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ul className='list-disc pl-5 space-y-2 opacity-90'>
-                <li>Engineered lag features (1, 7, 14, 28 days back) and rolling mean/std windows (7 and 28 days), plus calendar features (day of week, day of year, month, weekend flag) and a promo indicator.</li>
-                <li>Set the baseline to <strong>seasonal-naive</strong>: this week's forecast equals the same weekday one week ago, the standard low-effort comparison point for daily retail-style demand.</li>
-                <li>Trained a LightGBM regressor on 977 days and evaluated both the baseline and the model on the same trailing 90-day holdout, so the comparison isn't tilted by different test windows.</li>
-              </ul>
-            </CardContent>
-          </Card>
+      <Block title='Headline numbers'>
+        <Stats items={[
+          { value: '27.5%', label: 'WAPE on synthetic data (Holt-Winters 29.1%)' },
+          { value: '25.9%', label: 'Noise floor: forecasting the true mean' },
+          { value: '80.6%', label: 'Coverage of the conformal 80% interval (raw: 74%)' },
+          { value: '38.7% vs 38.0%', label: 'Real data: LightGBM vs Holt-Winters WAPE' },
+        ]} />
+        <p>On simulated data the model closes about three quarters of the gap between a weekday average and the noise floor. On real data it doesn’t beat Holt-Winters, and the page says so.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Feature Engineering & Training</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{FEATURE_CODE}</code></pre>
-            </CardContent>
-          </Card>
+      <Block title='Synthetic data: close to the noise floor'>
+        <Figure src={IMG + 'model_comparison.png'} alt='Horizontal bar chart of backtest WAPE from 11 September to 31 December 2025: LightGBM 27.5%, LightGBM on a raw target 28.1%, Holt-Winters 29.1%, 4-week weekday average 32.2%, same day last week 38.4%, with a dashed line at the 25.9% noise floor.' caption='Backtest WAPE over all 12 series and horizons 1–7, 11 September to 31 December 2025 (lower is better). The dashed line is the noise floor.' />
+        <DataTable head={['Model', 'WAPE', 'Bias']} highlight={0} rows={[
+          ['LightGBM, ratio to level, absolute-error loss', '27.5%', '−3.0%'],
+          ['LightGBM on raw units', '28.1%', '−7.8%'],
+          ['Holt-Winters (damped, weekly)', '29.1%', '+0.7%'],
+          ['Weekday average (4 weeks)', '32.2%', '−0.4%'],
+          ['Same weekday last week', '38.4%', '+0.2%'],
+          ['Noise floor: the generator’s true mean', '25.9%', ''],
+        ]} />
+        <p>Error is almost flat across horizons 1–7 (27.2–27.6%): most of the signal is weekly and seasonal, and day-to-day noise dominates. The point model is trained on absolute error because WAPE rewards the median, so it runs about 3% low on average; stocking uses the upper quantiles anyway.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Holdout Results (90 days)</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-3'>
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-3 text-center'>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>8.31</div><div className='text-[11px] opacity-70'>LightGBM MAE (naive: 10.80)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>10.46</div><div className='text-[11px] opacity-70'>LightGBM RMSE (naive: 14.76)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>5.76%</div><div className='text-[11px] opacity-70'>LightGBM MAPE (naive: 7.57%)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50 col-span-2 md:col-span-3'><div className='text-lg font-bold'>23.0% lower MAE</div><div className='text-[11px] opacity-70'>than seasonal-naive, on the same 90-day holdout</div></div>
-              </div>
-              <p className='opacity-90'>The gap holds across all three error metrics, not just the one that happened to look best, which is the usual tell for a real improvement rather than a cherry-picked comparison.</p>
-            </CardContent>
-          </Card>
+      <Block title='What made the difference'>
+        <Figure src={IMG + 'bias_by_store.png'} alt='Horizontal bar chart of forecast bias by store for a raw-units target and a target scaled by recent level. Raw-target bias is about −9.8% for suburb, −7.5% for downtown, −8.8% for campus and about 0% for airport; the scaled target cuts it to about −1.6%, −4.0%, −6.2% and −1.4%.' caption='Forecast bias by store, raw-units target against the target scaled by the recent 28-day level (negative means under-forecast).' />
+        <Bullets items={[
+          <><b>Predicting a ratio instead of raw units.</b> Tree models can’t extrapolate, so trained on raw units LightGBM under-forecasts any growing series. Predicting sales as a ratio to the recent level and multiplying back took the fastest-growing store (suburb, +22% a year) from −9.8% bias to −1.6%.</>,
+          <><b>One global model.</b> Twelve series share one model per horizon, with store and category as features: small series borrow strength from big ones, and a new store doesn’t mean a new model.</>,
+          <><b>Planned promotions as inputs.</b> On promotion days the model’s error is 27.4%, against 35.5% for the weekday average, which has no idea a promotion is running.</>,
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Actual vs. Forecast, Holdout Period</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ForecastChart />
-              <p className='opacity-90'>The naive line is a copy of last week shifted forward, so it tracks the actual series but always one week late to any turn. LightGBM picks up the same turns closer to when they happen, which is where most of its error reduction comes from.</p>
-            </CardContent>
-          </Card>
+      <Block title='From forecast to stock level'>
+        <p>Stock exactly the point forecast and you sell out on about half of all days. Raw quantile models came out overconfident: the 80% interval covered only 74% of actuals, and stocking to “q90” kept the shelf full on 86% of days, not 90%. So each model holds back its last eight weeks of training data and uses them for split-conformal calibration, widening the quantiles by the right amount. The calibration weeks are never the weeks being scored.</p>
+        <Figure src={IMG + 'stocking_tradeoff.png'} alt='Line chart of days fully in stock against leftover units per 100 sold, for raw quantile models and after conformal calibration. Both start at the point forecast (about 51% in stock, 14 leftover). Raw q90 reaches 86% and raw q95 91%; calibrated q90 reaches about 91% with 55 leftover and calibrated q95 96% with 77 leftover.' caption='Service against waste: days fully in stock against leftover units per 100 sold, stocking to the point forecast, q90 or q95, before and after conformal calibration.' />
+        <DataTable head={['Stock to', 'Days fully in stock', 'Demand served', 'Leftover per 100 sold']} rows={[
+          ['Point forecast', '51%', '85%', '14'],
+          ['90th percentile, raw', '86%', '96%', '44'],
+          ['90th percentile, conformal', '91%', '98%', '55'],
+          ['95th percentile, raw', '91%', '98%', '59'],
+          ['95th percentile, conformal', '96%', '99%', '77'],
+        ]} />
+        <p>After calibration the 80% interval covers 80.6% of actuals, so a service-level target can be set with the nominal quantile. The cost is visible too: going from 91% to 96% of days in stock takes 22 more leftover units per 100 sold.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>What the Model Leans On</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <FeatureImportance />
-              <p className='opacity-90'>Recent history dominates: the two most important lags (28 and 7 days back) and short-term volatility (<code>roll_std_7</code>) matter more than the calendar features. <code>is_promo</code> and <code>is_weekend</code> rank low individually, mostly because their effect is already captured indirectly through the lag and rolling features.</p>
-            </CardContent>
-          </Card>
+      <Block title='Real data: Online Retail II'>
+        <p>Fourteen daily series (UK or international, by seven product groups from description keywords), backtested over 16 weeks from 19 August to 8 December 2011, straight into the pre-Christmas peak. The shop doesn’t trade on Saturdays, bank holidays or over Christmas; those days are a known calendar, forecast and stocked at zero. There’s no promotion data.</p>
+        <DataTable head={['Model', 'WAPE', 'Bias']} highlight={2} rows={[
+          ['LightGBM, trained on absolute error', '38.7%', '−15.2%'],
+          ['LightGBM on raw units', '38.1%', '−18.6%'],
+          ['Holt-Winters (damped, weekly)', '38.0%', '−11.8%'],
+          ['Weekday average', '44.3%', '−8.6%'],
+          ['Same weekday last week', '51.4%', '−5.0%'],
+          ['LightGBM, first attempt (squared error)', '47.8%', '+0.5%'],
+        ]} />
+        <Figure src={IMG + 'retail_uk_christmas.png'} alt='Daily units for the UK Christmas-goods series, late August to early December 2011: actual sales, the LightGBM forecast made 7 days ahead, and its shaded 80% conformal interval. Sales climb from near zero to 3,000–5,000 units a day by November, with zeros on closed days, and the forecast follows the rise with one spike to about 8,000 units falling outside the interval.' caption='Online Retail II, UK Christmas goods: actual daily units, the LightGBM forecast made a week in advance, and its 80% conformal interval.' />
+        <Bullets items={[
+          'Holt-Winters is as good or better: it wins the first three folds and loses only the four weeks before Christmas. Both beat the weekday average in every fold. On these series a well-specified classical model is the one to beat.',
+          'The median runs low here (bias −15%): on spiky wholesale demand the median sits well below the mean. Fine for WAPE and stocking, wrong for planning total volume.',
+          'The ratio-to-level trick doesn’t help (38.1% on raw units): these series are seasonal but have no steady growth trend.',
+          'International series are much harder: 65–78% WAPE per series, against 30–37% in the UK.',
+          'Calibration works once closed days are left out of it: on trading days the 80% interval covers 81.0% of actuals (raw 68.5%), and conformal q90 and q95 keep the shelf full on 90.5% and 96.0% of trading days. Counting closed days would flatter coverage to 83.9%.',
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Repo Structure</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`demand_forecast/\n├─ generate_series.py   # synthetic 3-year daily series w/ trend, seasonality, promos\n├─ features.py           # lag/rolling/calendar feature builders\n├─ train.py               # LightGBM training + seasonal-naive baseline\n├─ evaluate.py            # MAE/RMSE/MAPE on the holdout, feature importance\n└─ data/ (daily_demand.csv)`}</code></pre>
-            </CardContent>
-          </Card>
-        </div>
+      <Block title='What broke: the first real-data attempt'>
+        <p>Trained on squared error, LightGBM scored 47.8% on the real data, worse than the weekday average. Single wholesale orders put huge spikes in these series; a squared-error model chases them, while WAPE rewards the median. Training on absolute error fixed it. I changed the loss after seeing the backtest, so the honest claim is the reasoning (match the loss to the metric), backed by the synthetic data where it also helps slightly (27.5% against 27.6%), not a tuned number.</p>
+        <p>The invoices had a trap of their own: the workbook’s two sheets overlap on 1–9 December 2010 (22,844 repeated lines), which without de-duplication looks like a pre-Christmas spike.</p>
+      </Block>
 
-        <ProjectPager slug='forecast' />
-      </div>
-      </main>
-    </div>
+      <Block title='How it works'>
+        <Steps items={[
+          { title: 'Series', text: 'simulated store/category sales with a known true mean, Online Retail II invoices turned into daily units with cancellations netted, or your own CSV.' },
+          { title: 'Features', text: 'for each horizon 1–7: recent level and volatility, same-weekday lags, store, category, calendar, and the planned promotion, holiday and closed flags for the target day.' },
+          { title: 'Models', text: 'one LightGBM point model (absolute error) and quantile models (10th, 50th, 90th, 95th) per horizon, with split-conformal calibration on held-back weeks.' },
+          { title: 'Backtest', text: 'four folds of four weeks, retrained at each fold’s first origin, against damped Holt-Winters refitted per fold and two naive baselines.' },
+          { title: 'Decision', text: 'quantiles turned into stock levels and scored as days in stock, demand served and leftover stock; then final models forecast the next week from an optional promotion plan and trading calendar.' },
+        ]} />
+        <p className='opacity-80'>Python 3.12, LightGBM, statsmodels for the Holt-Winters baseline, pandas and joblib; 46 tests, including the leakage scramble and conformal coverage on unseen weeks.</p>
+      </Block>
+
+      <Block title='Limitations'>
+        <Bullets items={[
+          'On the real data LightGBM doesn’t beat Holt-Winters overall; an ensemble of the two, scored on the same folds, is the next step.',
+          'The point forecast is a median, so it runs low on skewed demand (−3% synthetic, −15% real). Volume planning needs a separate mean model.',
+          'No price, weather or stock-out data. A day with zero stock records demand as zero, and the model learns that.',
+          'The stocking table treats each day separately; a real replenishment policy plans over the lead time, including shelf life.',
+          'The loss was switched after seeing the first real-data backtest, so the real-data number is slightly optimistic until confirmed on a later, untouched period.',
+          'One calendar is shared by all series, so a single store closing on its own can’t be expressed.',
+        ]} />
+      </Block>
+
+      <CodeNote tests={46} extras={['a model card', 'a next-week forecast script that takes a promotion plan and trading calendar']} />
+    </CaseStudyPage>
   )
 }

@@ -1,227 +1,104 @@
+import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, DashboardLink, CodeNote } from '../components/CaseStudy'
 
-import React from 'react'
-import { ProjectBreadcrumb, ProjectPager } from '../components/ProjectNav'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import AmbientBackground from '../components/AmbientBackground'
-import { useHeadMeta } from '../hooks/useHeadMeta'
-
-const ACCENT = '#2563eb'
-const AMBER = '#f59e0b'
-
-function Box({x,y,w,h,label,sub,fill}:{x:number;y:number;w:number;h:number;label:string;sub?:string;fill?:string}) {
-  return (
-    <g>
-      <rect x={x} y={y} width={w} height={h} rx={10} fill={fill||'none'} stroke={fill?'none':'currentColor'} strokeOpacity={fill?1:0.35} />
-      <text x={x+w/2} y={y+h/2-(sub?6:-4)} textAnchor='middle' fontSize='11' fontWeight={600} fill={fill?'#fff':'currentColor'}>{label}</text>
-      {sub && <text x={x+w/2} y={y+h/2+11} textAnchor='middle' fontSize='9' fill={fill?'#fff':'currentColor'} opacity={0.8}>{sub}</text>}
-    </g>
-  )
-}
-function Line({x1,y1,x2,y2}:{x1:number;y1:number;x2:number;y2:number}) {
-  return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke='currentColor' strokeOpacity={0.35} strokeWidth={1.3} />
-}
-
-function DataModel(){
-  const W=640, H=260
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Account risk data model, joined on account_id'>
-        <Box x={250} y={16} w={140} h={54} label='Accounts' sub='tier, ARR, renewal_date' fill={ACCENT} />
-        <Line x1={250} y1={43} x2={70} y2={100} />
-        <Line x1={320} y1={70} x2={320} y2={100} />
-        <Line x1={390} y1={43} x2={560} y2={100} />
-        <Line x1={250} y1={43} x2={70} y2={190} />
-
-        <Box x={10} y={100} w={140} h={48} label='Activity Log' sub='last_active_date' />
-        <Box x={250} y={100} w={140} h={48} label='Support Tickets' sub='status, severity' />
-        <Box x={490} y={100} w={140} h={48} label='CSAT Surveys' sub='score, survey_date' />
-        <Box x={10} y={190} w={140} h={48} label='Contacts' sub='role, champion_flag' />
-
-        <text x={W/2} y={232} textAnchor='middle' fontSize='9.5' fill='currentColor' opacity={0.55}>All child tables key back to Accounts on account_id; the risk rule reads across all four each nightly refresh.</text>
-      </svg>
-    </div>
-  )
-}
-
-const TIERS = [
-  {tier:'Enterprise', accounts:66, atRisk:10, pct:15.2, arr:808423},
-  {tier:'Mid-Market', accounts:204, atRisk:19, pct:9.3, arr:440912},
-  {tier:'SMB', accounts:370, atRisk:38, pct:10.3, arr:230092},
-]
-
-function TierChart(){
-  const W=560, H=TIERS.length*52+20, labelW=100
-  const maxPct = Math.max(...TIERS.map(t=>t.pct))
-  const plotW = W-labelW-70
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='At-risk account share by tier'>
-        {TIERS.map((t,i)=>{
-          const y=10+i*52, w=(t.pct/maxPct)*plotW
-          return (
-            <g key={t.tier}>
-              <text x={0} y={y+8} fontSize='11' fill='currentColor' opacity={0.85} fontWeight={600}>{t.tier}</text>
-              <text x={0} y={y+22} fontSize='9.5' fill='currentColor' opacity={0.55}>{t.atRisk} of {t.accounts} accounts</text>
-              <rect x={labelW} y={y} width={w} height={24} rx={4} fill={ACCENT} fillOpacity={0.85}>
-                <title>{t.tier}: {t.pct}% at risk, ${t.arr.toLocaleString()} ARR</title>
-              </rect>
-              <text x={labelW+w+8} y={y+16} fontSize='11' fontWeight={600} fill='currentColor'>{t.pct}%</text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
-const REASONS = [
-  {label:'Inactive 30+ days (base condition)', count:67},
-  {label:'+ 2 or more open tickets', count:45},
-  {label:'+ CSAT below 6', count:17},
-  {label:'+ Lost their champion contact', count:17},
-]
-
-function ReasonChart(){
-  const W=560, H=REASONS.length*40+16, labelW=200
-  const maxV = REASONS[0].count
-  const plotW = W-labelW-50
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Reasons contributing to the at-risk flag'>
-        {REASONS.map((r,i)=>{
-          const y=8+i*40, w=(r.count/maxV)*plotW
-          const color = i===0 ? ACCENT : AMBER
-          return (
-            <g key={r.label}>
-              <text x={labelW-8} y={y+16} fontSize='10.5' textAnchor='end' fill='currentColor' opacity={0.8}>{r.label}</text>
-              <rect x={labelW} y={y} width={w} height={22} rx={4} fill={color} fillOpacity={0.85}>
-                <title>{r.label}: {r.count} accounts</title>
-              </rect>
-              <text x={labelW+w+6} y={y+16} fontSize='10.5' fontWeight={600} fill='currentColor'>{r.count}</text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
-const RULE_CODE = `at_risk = (
-    (today - account.last_active_date).days >= 30
-    and (
-        account.open_tickets >= 2
-        or account.latest_csat < 6
-        or account.champion_left is True
-    )
-)
-priority = at_risk and account.renewal_date <= today + timedelta(days=90)`
+const IMG = '/projects/account-risk/'
 
 export default function Page() {
-  useHeadMeta({ title: 'Account Health & Renewal-Risk Reporting', description: 'A stakeholder-governed at-risk definition turned into a KPI dashboard for CS, AM, and Renewals.', path: '/projects/account-risk' })
   return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
-      <AmbientBackground/>
-      <main id='main-content'>
-      <div className='section'>
-        <div className='section-stripe'></div>
-        <ProjectBreadcrumb slug='account-risk' />
-        <h1 className='section-title'>Account Health & Renewal-Risk Reporting</h1>
-        <p className='text-center opacity-80 max-w-2xl mx-auto'>A stakeholder-governed definition of "at-risk" turned into a KPI dashboard for Customer Success, Account Management, and Renewals.</p>
-        <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['Business Analysis','Requirements Gathering','Data Modeling','KPI Design','Python','Stakeholder Reporting'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
-        </div>
+    <CaseStudyPage slug='account-risk' lede='One agreed definition of an at-risk account, written once and traced to tests, then checked against 453 past renewals: the agreed rule caught 14% of the ARR that later churned, and moving one threshold catches 48%.'>
 
-        <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
-          <Card>
-            <CardHeader><CardTitle>Business Problem</CardTitle></CardHeader>
-            <CardContent className='text-sm leading-relaxed space-y-2'>
-              <p className='opacity-90'>Renewal risk usually surfaces the way it shouldn't: an account manager finds out an account is unhappy in the same conversation where they're told it's not renewing. Everyone involved (CS, account management, sales leadership) had their own gut-feel sense of which accounts were "at risk," but no shared, written definition, so nobody could point to a consistent list, and forecasting renewal ARR meant three different spreadsheets that disagreed with each other.</p>
-              <p className='opacity-70 text-xs'>The 640 accounts and their usage, ticket, and survey history are ones I built myself rather than a real company's book of business, since that's not something you can ethically publish, anonymized or not. There's no real company behind these numbers, but the requirements process, the rule, and every KPI below are computed by actually running that rule against the data.</p>
-            </CardContent>
-          </Card>
+      <Block title='Overview'>
+        <p>A B2B software company wants Customer Success to stop being surprised by churn at renewal time. Which accounts should account managers call this week, and is the rule that picks them any good? Four groups use the answer:</p>
+        <Bullets items={[
+          <><b>CS leadership:</b> how much revenue is exposed, and where (KPI tiles, risk by tier, renewal schedule).</>,
+          <><b>Account managers:</b> which accounts to call and what to say (a worklist by priority and ARR, with the reason for each flag).</>,
+          <><b>Renewals team:</b> what’s coming up and how risky it is (monthly schedule with at-risk ARR).</>,
+          <><b>Data steward:</b> which CRM records are broken (a data-review list naming each problem).</>,
+        ]} />
+        <p>The pipeline reads five CRM extracts (accounts, activity, tickets, CSAT, contacts) and checks them: a broken file stops the run with a one-line message, while a broken record goes to data review but is still scored, because a broken record is often the riskiest one. It then applies the agreed rule: <b>at risk</b> = inactive 30+ days <i>and</i> a warning sign (2+ open tickets, CSAT below 6, or the champion has left); <b>priority</b> = at risk and renewing within 90 days. Finally it backtests the rule against past renewals and tests a proposed change, CR-01: 14 days instead of 30.</p>
+        <p className='opacity-70 text-xs'>All data is synthetic: 900 accounts with a hidden health score that drives activity, tickets, CSAT, champion turnover, seat use and churn, which the rule never sees. A 1 July 2025 snapshot has the outcome of every renewal in the next six months (453 renewals, 70 churned); the 1 January 2026 book is deliberately dirty, the way real CRM exports are. The stakeholders and sign-offs are illustrative.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Stakeholders</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ul className='list-disc pl-5 space-y-2 opacity-90'>
-                <li><strong>CS leadership</strong> needed a portfolio-level view: how many accounts, and how much ARR, are at risk right now, broken out by tier.</li>
-                <li><strong>Account managers / CSMs</strong> needed an actionable worklist: which specific accounts, and why each one is flagged, so outreach can be prioritized and targeted rather than blanket.</li>
-                <li><strong>Renewals / sales ops</strong> needed at-risk accounts cross-referenced against renewal date, since an at-risk account renewing next week is a very different priority than one renewing in eight months.</li>
-              </ul>
-            </CardContent>
-          </Card>
+      <Block title='Headline numbers'>
+        <Stats items={[
+          { value: '14%', label: 'Churned ARR caught by the agreed 30-day rule' },
+          { value: '48%', label: 'Caught with 14 days instead (CR-01)' },
+          { value: '21%', label: 'Caught by random flagging at the same volume' },
+          { value: '+19 to +51', label: 'Points more churned ARR caught (95% interval)' },
+        ]} />
+        <p>The improvement is certain, but its size isn’t: with 70 churners every percentage is loose, and 14 days was picked by looking at this same history.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Requirements & the Governed Business Rule</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <p className='opacity-90'>The real work was turning "which accounts are at risk" from a gut-feel judgment into a precise, auditable rule that every stakeholder would actually agree to and stand behind, since a dashboard nobody trusts doesn't get used. After review, the definition settled on was: <strong>inactive for 30 or more days</strong>, combined with at least one of three warning signs (2 or more open support tickets, a CSAT score below 6, or the loss of the account's internal champion contact).</p>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{RULE_CODE}</code></pre>
-              <p className='opacity-90 text-xs'>Inactivity alone was deliberately not enough to flag an account (a quiet account can just be a healthy, low-touch one), and any single warning sign alone was considered too noisy. Requiring both is what made the rule something stakeholders were willing to act on rather than dispute.</p>
-            </CardContent>
-          </Card>
+      <Block title='Backtest of the proposed change'>
+        <p>The agreed rule is precise but far too narrow. On the renewals from July to December 2025 it flags only 6% of accounts:</p>
+        <DataTable head={['Rule', 'Flagged', 'Precision', 'Churners caught', 'Churned ARR caught']} highlight={1} rows={[
+          ['Current (30 days)', '6%', '39%', '16%', '14%'],
+          ['Proposed (14 days)', '21%', '34%', '46%', '48%'],
+          ['Logistic health score, same volume', '21%', '36%', '49%', '46%'],
+          ['Random, same volume', '21%', '', '', '21%'],
+        ]} />
+        <p>The 14-day rule flags 21% of renewing accounts, slightly over the 20% CS says it can work, and a third of flagged accounts really did churn, against a 15% base rate. Three honest caveats:</p>
+        <Bullets items={[
+          'It flags every account the 30-day rule does and more, so of course it catches more. The fair test is chance at the same volume: flagging 21% of renewals at random catches about 21% of churned ARR (95% range 9–36%). Per flagged account it’s no more precise than the current rule (34% vs. 39%; the difference is −20 to +10 points with 95% confidence).',
+          'With only 70 churners every percentage is loose. Resampling the renewals 2,000 times gives 4–27% for the current rule and 31–65% for the proposed one.',
+          '14 days was chosen on this same history, so 48% is an in-sample number. It’s one threshold moved, not a search over hundreds of combinations, but the real test is the next two quarters of renewals.',
+        ]} />
+        <Figure src={IMG + 'rule_tradeoff.png'} alt='Scatter of churned ARR caught against share of renewing accounts flagged for 288 rule variants, with the current rule, proposed rule and logistic score highlighted and a dashed line for random flagging' caption='Share of renewing accounts flagged against share of churned ARR caught, July–December 2025 renewals. Grey dots are the 288 rule variants tried; the current rule sits at 6% flagged and 14% caught, the proposed rule at 21% and 48%, and the logistic score at 21% and 46%. The dashed diagonal is flagging at random.' />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Data Model</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <DataModel />
-              <p className='opacity-90 text-xs'>Four source tables, joined on account_id and refreshed nightly, feed the rule: account/usage activity, support tickets, CSAT surveys, and champion contact status.</p>
-            </CardContent>
-          </Card>
+      <Block title='The book today'>
+        <p>On the current book (830 accounts, $22.3M ARR, as of 1 January 2026) the approved rule flags <b>58 accounts</b> ($1.60M ARR), <b>16</b> of them priority ($330k renewing within 90 days), and <b>32 accounts</b> go to the data-review list. CR-01 would add 119 accounts to the worklist (58 → 177). Of the flagged accounts, 43 have 2+ open tickets, 32 a CSAT below 6 and 17 a departed champion (an account can have several).</p>
+        <DataTable head={['Tier', 'Accounts', 'At risk', 'Risk rate', 'ARR at risk']} rows={[
+          ['SMB', 454, 31, '6.8%', '$299,600'],
+          ['Mid-Market', 282, 19, '6.7%', '$574,400'],
+          ['Enterprise', 94, 8, '8.5%', '$721,100'],
+        ]} />
+        <p>The extract carries the problems real exports do: 14 missing activity dates, 4 missing renewal dates, 6 unknown champion statuses, 3 impossible CSAT scores, 2 negative ARR values and 3 duplicate activity rows. The checks find all of them.</p>
+        <Figure src={IMG + 'dashboard_preview.png'} alt='Screenshot of the account health dashboard: KPI tiles, the proposed-change callout, risk by tier, warning signs and the start of the renewal schedule' caption='The top of the dashboard: KPI tiles, the CR-01 callout, risk by tier (count and ARR), the warning signs behind each flag, and the start of the renewal schedule.' />
+        <DashboardLink href='/dashboards/account-health.html' label='Open the account health dashboard' note='One offline file from the committed run: KPIs, risk by tier, renewal schedule, the worklist with filters and the data-review list, with a toggle to see which accounts the proposed rule would add.' />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>KPI Dashboard: Portfolio Summary</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-3'>
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-3 text-center'>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>640</div><div className='text-[11px] opacity-70'>Total accounts · $12.13M ARR</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>67 (10.5%)</div><div className='text-[11px] opacity-70'>Accounts flagged at-risk</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>$1.48M (12.2%)</div><div className='text-[11px] opacity-70'>ARR at risk</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50 col-span-2 md:col-span-3'><div className='text-lg font-bold'>50 accounts · $1.31M ARR</div><div className='text-[11px] opacity-70'>"Priority": at-risk and renewing within 90 days</div></div>
-              </div>
-              <p className='opacity-90'>ARR at risk (12.2%) running a bit ahead of account count at risk (10.5%) is itself a finding: risk is skewing very slightly toward higher-value accounts, which is exactly the gap a flat, unsegmented churn number would hide.</p>
-            </CardContent>
-          </Card>
+      <Block title='Requirements, traced to tests'>
+        <p>Every requirement has an ID and at least one test named after it: 11 requirements, 13 tests named <code>test_req01_…</code> to <code>test_req11_…</code>. A few that shaped the design:</p>
+        <Bullets items={[
+          <><b>REQ-02:</b> inactivity on its own never flags an account (healthy accounts go quiet over holidays).</>,
+          <><b>REQ-03:</b> a missing CSAT means “unknown”, not “unhappy”; about 12% of accounts never answer the survey.</>,
+          <><b>REQ-06:</b> data problems never silently remove an account; it’s scored and also listed for review, with the problem named.</>,
+          <><b>REQ-09:</b> ARR at risk counts each account once, even when several warning signs apply.</>,
+          <><b>REQ-11:</b> before any change, the rule must catch more churned ARR at past renewals than flagging the same share at random.</>,
+        ]} />
+        <p>The rule is written once and used for the worklist, the dashboard and the backtest, so they can’t disagree.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>At-Risk Share by Tier</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <TierChart />
-              <p className='opacity-90'>Enterprise accounts are flagged at the highest rate (15.2%) despite being the smallest tier by count, ahead of SMB (10.3%) and Mid-Market (9.3%). That's the opposite of the usual assumption that larger accounts are inherently stickier, and was the single most surprising number in the rollout to CS leadership.</p>
-            </CardContent>
-          </Card>
+      <Block title='What the search and the model taught'>
+        <Bullets items={[
+          <><b>The best-looking variant was overfitting.</b> Held to the 14-day rule’s volume, the best of 288 variants caught 50% of churned ARR. Repeating the search 50 times on a random half of the renewals and scoring the winner on the other half: 54% where it was picked, 41% where it wasn’t. The 14-day rule averaged 46% on the same held-out halves and did at least as well in 88% of splits.</>,
+          <><b>A logistic health score did no better.</b> Cross-validated on the same signals it catches 46% at the same volume, against 48%, well within the noise of 70 churners, and it’s much harder to explain.</>,
+          <><b>But the model found what the rule misses.</b> Seat utilisation is the strongest churn signal, and the rule doesn’t use it at all. That became the next change request, CR-02, once Product and CS agree what an “active seat” is.</>,
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Why Accounts Are Flagged</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ReasonChart />
-              <p className='opacity-90'>These reasons aren't mutually exclusive: an account can be inactive and also have both open tickets and a low CSAT score, which is why the three secondary counts (45, 17, 17) don't add up to 67. Open tickets is by far the most common accompanying signal (45 of 67 accounts), which is also the most directly actionable one for a CSM's next call.</p>
-            </CardContent>
-          </Card>
+      <Block title='How it works'>
+        <Steps items={[
+          { title: 'Read', text: 'five CSVs, either the bundled synthetic extract or your own; ISO dates (with time zones converted to UTC), numbers with currency signs, and the common spellings of yes/no are understood.' },
+          { title: 'Check', text: 'shape problems (a missing file or column, a non-integer account id) stop the run with one line; record problems (missing dates, impossible values, unknown tiers) go to the data-review list.' },
+          { title: 'Score', text: 'the at-risk and priority rule, written once, with the reason for each flag in plain words.' },
+          { title: 'Backtest', text: 'the rule against renewal outcomes, with a random baseline at the same volume, 2,000 bootstrap resamples, a 288-variant grid with a split-half overfitting check, and a cross-validated logistic score.' },
+          { title: 'Report', text: 'the worklist, renewal schedule, data-review list, metrics and a one-file dashboard whose text follows the numbers.' },
+        ]} />
+        <p className='opacity-80'>Python 3.12, pandas and NumPy for the pipeline and bootstrap, scikit-learn for the logistic score, matplotlib for the chart; the dashboard is a single offline HTML page with the data embedded.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Deliverables</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <ul className='list-disc pl-5 space-y-2 opacity-90'>
-                <li>A one-page written definition of "at-risk" and "priority," signed off by CS, account management, and renewals leadership, so the number means the same thing in every meeting.</li>
-                <li>A refreshed dashboard (portfolio summary, tier breakdown, reason breakdown) for CS leadership, rebuilt nightly from the four source tables.</li>
-                <li>An account-level worklist export for CSMs: which accounts, which reason(s), and days until renewal, sorted by ARR.</li>
-                <li>A monthly ARR-at-risk rollup handed to renewals/sales ops for forecasting, instead of three teams' separate spreadsheets.</li>
-              </ul>
-            </CardContent>
-          </Card>
+      <Block title='Limitations'>
+        <Bullets items={[
+          'One backtest window with 70 churners: the improvement is clear (19 to 51 points more churned ARR caught, 95% interval), its size isn’t. The backtest should be re-run every quarter.',
+          'A single snapshot per account. In practice you’d score weekly and ask whether the account was flagged at any point in the 90 days before renewal.',
+          'No save-play effect: if CS saves flagged accounts, the rule will look worse in future backtests than it really is. A small hold-out group would measure that.',
+          'The backtest always runs on the synthetic history; your own extract can be scored but not validated until past renewal outcomes are added as a sixth file.',
+          'CS capacity (20% of renewing accounts) is a fixed constant from one conversation, and should become a parameter.',
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Repo Structure</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`account_risk/\n├─ generate_accounts.py   # synthetic accounts, activity, tickets, CSAT, contacts\n├─ rule.py                 # governed at-risk / priority rule\n├─ kpis.py                  # portfolio, tier, and reason rollups\n└─ data/ (accounts.csv, activity.csv, tickets.csv, csat.csv, contacts.csv)`}</code></pre>
-            </CardContent>
-          </Card>
-        </div>
-
-        <ProjectPager slug='account-risk' />
-      </div>
-      </main>
-    </div>
+      <CodeNote tests={45} extras={['REQUIREMENTS.md with each requirement traced to its tests', 'the offline dashboard']} />
+    </CaseStudyPage>
   )
 }

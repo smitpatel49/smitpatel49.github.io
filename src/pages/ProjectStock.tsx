@@ -1,202 +1,114 @@
+import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-import React from 'react'
-import { ProjectBreadcrumb, ProjectPager } from '../components/ProjectNav'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import AmbientBackground from '../components/AmbientBackground'
-import { useHeadMeta } from '../hooks/useHeadMeta'
-
-const GAIN = '#2563eb'
-const LOSS = '#f59e0b'
-
-const DAYS = [0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,89]
-const FAN: Record<string, number[]> = {
-  '5':  [-1.62,-4.04,-5.3,-6.23,-6.91,-7.6,-8.17,-8.42,-8.97,-9.14,-9.39,-9.57,-9.66,-9.98,-10.44,-10.72,-10.71,-11.18,-11.14],
-  '25': [-0.61,-1.29,-1.92,-2.2,-2.25,-2.36,-2.33,-2.29,-2.27,-2.4,-2.42,-2.39,-2.16,-2.07,-2.26,-2.23,-2.17,-1.79,-1.81],
-  '50': [0.03,0.18,0.71,0.8,1.05,1.45,1.78,2.13,2.46,2.55,3.06,3.08,3.63,3.82,3.89,4.22,4.55,4.99,5.05],
-  '75': [0.7,2.1,3.0,3.8,4.58,5.43,5.96,6.73,7.25,7.73,8.36,8.95,9.47,10.24,10.64,11.28,11.76,12.12,12.47],
-  '95': [1.84,4.81,6.84,8.37,9.99,11.18,12.57,13.93,14.91,15.67,17.18,17.92,19.05,20.12,20.91,22.11,22.75,23.66,24.78],
-}
-
-function FanChart(){
-  const W=620, H=290, padL=42, padB=28, padT=10, padR=10
-  const plotW=W-padL-padR, plotH=H-padT-padB
-  const yMin = Math.min(...FAN['5'])-2, yMax = Math.max(...FAN['95'])+2
-  const sx=(d:number)=>padL+(d/89)*plotW
-  const sy=(v:number)=>padT+(1-(v-yMin)/(yMax-yMin))*plotH
-  const band = (lo:number[], hi:number[]) => {
-    const top = DAYS.map((d,i)=>`${i===0?'M':'L'}${sx(d).toFixed(1)},${sy(hi[i]).toFixed(1)}`).join(' ')
-    const bottom = [...DAYS].reverse().map((d,i)=>`L${sx(d).toFixed(1)},${sy(lo[lo.length-1-i]).toFixed(1)}`).join(' ')
-    return top+' '+bottom+' Z'
-  }
-  const line = (v:number[]) => v.map((val,i)=>`${i===0?'M':'L'}${sx(DAYS[i]).toFixed(1)},${sy(val).toFixed(1)}`).join(' ')
-  const zeroY = sy(0)
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Fan chart of simulated 90-day price return scenarios'>
-        <line x1={padL} y1={zeroY} x2={sx(89)} y2={zeroY} stroke='currentColor' strokeOpacity={0.3} strokeDasharray='4 3' />
-        <path d={band(FAN['5'],FAN['95'])} fill={GAIN} fillOpacity={0.12} />
-        <path d={band(FAN['25'],FAN['75'])} fill={GAIN} fillOpacity={0.22} />
-        <path d={line(FAN['50'])} fill='none' stroke={GAIN} strokeWidth={2.5} />
-        {[yMin, 0, yMax].map(v=>(
-          <text key={v} x={padL-6} y={sy(v)+3} fontSize='9' textAnchor='end' fill='currentColor' opacity={0.6}>{v.toFixed(0)}%</text>
-        ))}
-        {[0,30,60,89].map(d=>(
-          <text key={d} x={sx(d)} y={H-8} fontSize='9' textAnchor={d>=89?'end':'middle'} fill='currentColor' opacity={0.6}>Day {d}</text>
-        ))}
-      </svg>
-      <div className='flex gap-4 justify-center text-xs mt-1 opacity-75 flex-wrap'>
-        <span className='flex items-center gap-1'><span className='w-2.5 h-2.5 rounded-sm inline-block' style={{background:GAIN,opacity:0.9}}/> Median path</span>
-        <span className='flex items-center gap-1'><span className='w-2.5 h-2.5 rounded-sm inline-block' style={{background:GAIN,opacity:0.35}}/> 25th–75th pct</span>
-        <span className='flex items-center gap-1'><span className='w-2.5 h-2.5 rounded-sm inline-block' style={{background:GAIN,opacity:0.15}}/> 5th–95th pct</span>
-      </div>
-    </div>
-  )
-}
-
-type Bin = { lo:number; hi:number; count:number }
-// Actual output of the simulation's terminal-return histogram (24 bins, seed=7).
-const HIST: Bin[] = [
-  {lo:-26.89,hi:-23.75,count:3},{lo:-23.75,hi:-20.61,count:9},{lo:-20.61,hi:-17.47,count:14},
-  {lo:-17.47,hi:-14.33,count:40},{lo:-14.33,hi:-11.19,count:83},{lo:-11.19,hi:-8.05,count:131},
-  {lo:-8.05,hi:-4.91,count:208},{lo:-4.91,hi:-1.77,count:266},{lo:-1.77,hi:1.37,count:320},
-  {lo:1.37,hi:4.51,count:361},{lo:4.51,hi:7.65,count:328},{lo:7.65,hi:10.79,count:336},
-  {lo:10.79,hi:13.93,count:255},{lo:13.93,hi:17.06,count:202},{lo:17.06,hi:20.2,count:161},
-  {lo:20.2,hi:23.34,count:89},{lo:23.34,hi:26.48,count:81},{lo:26.48,hi:29.62,count:52},
-  {lo:29.62,hi:32.76,count:26},{lo:32.76,hi:35.9,count:15},{lo:35.9,hi:39.04,count:13},
-  {lo:39.04,hi:42.18,count:3},{lo:42.18,hi:45.32,count:2},{lo:45.32,hi:48.46,count:2},
-]
-
-function ReturnHistogram(){
-  const W=620, H=230, padL=36, padB=26, padT=10, padR=10
-  const plotW=W-padL-padR, plotH=H-padT-padB
-  const maxCount = Math.max(...HIST.map(b=>b.count))
-  const xMin=HIST[0].lo, xMax=HIST[HIST.length-1].hi
-  const sx=(v:number)=>padL+((v-xMin)/(xMax-xMin))*plotW
-  const barW = plotW/HIST.length - 2
-  const var95Line = sx(-11.14)
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Distribution of simulated 90-day terminal returns'>
-        <line x1={sx(0)} y1={padT} x2={sx(0)} y2={H-padB} stroke='currentColor' strokeOpacity={0.3} strokeDasharray='4 3' />
-        <line x1={var95Line} y1={padT} x2={var95Line} y2={H-padB} stroke={LOSS} strokeOpacity={0.7} strokeDasharray='2 2' />
-        <text x={var95Line} y={padT-2} fontSize='9' textAnchor='middle' fill={LOSS}>VaR 95</text>
-        {HIST.map((b,i)=>{
-          const h=(b.count/maxCount)*plotH, x=sx(b.lo), y=H-padB-h
-          const color = b.hi<=0 ? LOSS : GAIN
-          return <rect key={i} x={x} y={y} width={barW} height={h} fill={color} fillOpacity={0.9}><title>{b.lo}% to {b.hi}%: {b.count} paths</title></rect>
-        })}
-        {[xMin,0,xMax].map(v=>(<text key={v} x={sx(v)} y={H-8} fontSize='9' textAnchor='middle' fill='currentColor' opacity={0.65}>{v>0?'+':''}{v.toFixed(0)}%</text>))}
-      </svg>
-    </div>
-  )
-}
-
-const SIM_CODE = `regimes = markov_regimes(p_stay_calm=0.98, p_stay_volatile=0.88, n=750)
-hist_returns = normal(mu[regimes], sigma[regimes])       # synthetic daily returns
-
-def block_bootstrap(returns, horizon=90, block=10):
-    out = []
-    while len(out) < horizon:
-        start = rng.integers(0, len(returns)-block)
-        out += list(returns[start:start+block])
-    return out[:horizon]
-
-paths = [block_bootstrap(hist_returns) for _ in range(3000)]
-cum = cumprod(1 + paths, axis=1) - 1                      # cumulative return paths
-er, var95, var99 = cum[:,-1].mean(), pct(cum[:,-1],5), pct(cum[:,-1],1)
-signal = 'BUY' if (median(cum[:,-1]) > HURDLE and var95 > RISK_BUDGET) else 'HOLD/SELL'`
+const IMG = '/projects/stock/'
 
 export default function Page() {
-  useHeadMeta({ title: 'Simulating a Buy/Sell Call for a Stock', description: 'Regime-aware block bootstrap over 3,000 paths; VaR/CVaR and a fan chart.', path: '/projects/stock' })
   return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
-      <AmbientBackground/>
-      <main id='main-content'>
-      <div className='section'>
-        <div className='section-stripe'></div>
-        <ProjectBreadcrumb slug='stock' />
-        <h1 className='section-title'>Simulating a Buy/Sell Call for a Stock</h1>
-        <p className='text-center opacity-80 max-w-2xl mx-auto'>Regime-aware block bootstrap over 3,000 simulated 90-day paths, turned into a fan chart, VaR/CVaR, and a rule-based signal.</p>
-        <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['Python','NumPy','Pandas','Bootstrap Simulation','Risk (VaR/CVaR)','Time Series'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
-        </div>
+    <CaseStudyPage slug='stock' lede='Resampling past returns understates next quarter’s tail risk, because markets switch between calm and stressed regimes that last for weeks. This measures by how much, against a known truth, and then on ten years of the S&P 500.'>
 
-        <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
-          <Card>
-            <CardHeader><CardTitle>Business Question</CardTitle></CardHeader>
-            <CardContent className='text-sm leading-relaxed space-y-2'>
-              <p className='opacity-90'>"Should I buy this?" is really two questions: what's the expected return, and what's the pain if it goes wrong? This treats both as a distribution instead of a single point forecast, and turns that distribution into an explicit, auditable decision rule.</p>
-              <p className='opacity-70 text-xs'>The daily returns come from a two-state (calm/volatile) regime model I built, not a real ticker. That was a deliberate call, not a shortcut: running this on an actual stock and framing it as a "buy/sell" signal edges into real financial advice, which isn't something I want to put my name on in a portfolio piece. The mechanics and every statistic below are genuinely computed, just against a series I generated on purpose.</p>
-            </CardContent>
-          </Card>
+      <Block title='Overview'>
+        <p>A portfolio manager holds a single stock and has agreed a rule in advance: <b>keep it if the median return over the next quarter (63 trading days) beats +3% and the 95% value-at-risk is no worse than −12%</b>. VaR95 is the 5th-percentile return. The rule is simple; the hard part is the distribution it’s applied to, and how far to trust the number.</p>
+        <Bullets items={[
+          <><b>Find the regimes:</b> a two-state hidden Markov model with Student-t returns in each state, fitted by EM in about 100 lines of NumPy, estimates how volatile each regime is, how long it lasts and which one the market is in today.</>,
+          <><b>Simulate the quarter six ways:</b> plain and block bootstrap, a regime-aware bootstrap from today’s state (and from a calm or stressed start), and the fitted model simulated directly. 20,000 paths each.</>,
+          <><b>Backtest 1-day VaR four ways:</b> historical, EWMA, GARCH(1,1) and the regime model, each using only data available at the time, scored with the Kupiec and Christoffersen tests.</>,
+        ]} />
+        <p>The main history is synthetic (1,500 trading days with known regimes and Student-t shocks), so every answer is compared with the process that really generated it, simulated from the regime it’s really in today. The real data is FRED’s S&amp;P 500 price index, 2016-10-04 to 2026-10-02. That series is copyrighted, so this page shows only derived quantities, never index levels or daily returns.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Approach</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ul className='list-disc pl-5 space-y-2 opacity-90'>
-                <li>Modeled the underlying series with a <strong>2-state Markov regime</strong> (calm vs. volatile daily vol/drift) rather than a single flat distribution, since markets don't have one volatility; they switch between a few.</li>
-                <li>Ran a <strong>block bootstrap</strong> (10-day blocks, preserving short-run autocorrelation) to build 3,000 simulated 90-day forward paths from the 750-day trailing history.</li>
-                <li>Converted the terminal-day distribution into <strong>VaR</strong> and <strong>CVaR</strong>, and fed both into an explicit rule: buy only if the median return clears a hurdle <em>and</em> the 95% VaR stays inside a risk budget.</li>
-              </ul>
-            </CardContent>
-          </Card>
+      <Block title='Headline numbers'>
+        <Stats items={[
+          { value: '−12.0%', label: 'Regime-aware VaR95 against a −12% budget (MC interval −12.4% to −11.6%)' },
+          { value: '−13.3%', label: 'VaR95 of the true process: the right call is reduce' },
+          { value: '+0.4 vs +1.4 pts', label: 'Average VaR95 optimism over 40 histories: regime-aware vs bootstrap' },
+          { value: '−19.3%', label: 'S&P 500 VaR95 from a stressed start (calm today: −10.3%)' },
+        ]} />
+        <p>A plain bootstrap says hold comfortably; the regime-aware simulation lands on the budget, a coin toss; the truth says reduce. The regime model closes most of the gap, not all of it.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Simulation</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{SIM_CODE}</code></pre>
-            </CardContent>
-          </Card>
+      <Block title='Next quarter: hold or reduce?'>
+        <Figure src={IMG + 'method_comparison.png'} alt='Horizontal bar chart of 63-day VaR95 and CVaR95 for seven simulations, with a dashed line at the −12% risk budget. The independent bootstrap has the mildest tail (VaR95 about −10.8%); the regime-aware simulations sit around −12%; starting stressed reaches about −17% VaR95 and −22% CVaR95; the true process, drawn hatched, is at about −13.3% VaR95 and −18.7% CVaR95.' caption='63-day VaR95 and CVaR95 (the average beyond VaR) by simulation method, on the synthetic history. The hatched bars are the true process; the dashed line is the −12% risk budget.' />
+        <DataTable head={['Next quarter, from today', 'Median', 'VaR95', 'CVaR95', 'Hold?']} highlight={4} rows={[
+          ['Bootstrap, days drawn independently', '+3.3%', '−10.8%', '−14.2%', 'yes'],
+          ['Block bootstrap (10-day blocks)', '+3.7%', '−11.8%', '−15.8%', 'yes'],
+          ['Regime-aware (resampled days)', '+4.3%', '−12.0%', '−17.1%', 'yes, by 0.04 pts'],
+          ['Fitted HMM simulated directly', '+4.4%', '−11.8%', '−16.8%', 'yes'],
+          ['True process, from today’s true state', '+2.4%', '−13.3%', '−18.7%', 'no'],
+        ]} />
+        <p>Bootstraps shuffle past days (or 10-day chunks), which breaks stressed spells into pieces, so the simulated quarter almost never contains the long run of bad days that produces a −15% quarter. The regime-aware simulation keeps that structure: it simulates which regime each future day is in, starting from today’s estimated state, then draws that day’s return from past days weighted by the model’s probability that they were in that regime.</p>
+        <p>The remaining gap comes from this particular history: its 21 stressed spells averaged 10 days against the generator’s 17, and its calm days drifted up faster than the generator’s. To separate luck from bias, the comparison is repeated on 40 independent synthetic histories (a positive error means the method says the quarter is safer than it is):</p>
+        <DataTable head={['Method', 'VaR95 error, average', 'VaR95 RMSE', 'CVaR95 error, average']} rows={[
+          ['Bootstrap, days drawn independently', '+1.4 pts', '3.3 pts', '+3.2 pts'],
+          ['Block bootstrap', '+1.0 pts', '3.5 pts', '+2.2 pts'],
+          ['Regime-aware (resampled days)', '+0.4 pts', '3.3 pts', '+0.6 pts'],
+          ['Fitted HMM simulated directly', '+0.1 pts', '3.1 pts', '+0.1 pts'],
+        ]} />
+        <p>The bootstraps are biased towards optimism, most of all beyond VaR; the regime methods are close to unbiased. But for every method the error from having only six years of history (about 3 points of VaR95) is bigger than the differences between methods, so a VaR this close to the budget should be read as “near the limit”, not as a pass.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>90-Day Outlook (3,000 simulated paths)</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-3 text-center'>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>+5.7%</div><div className='text-[11px] opacity-70'>Expected Return</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>-11.1%</div><div className='text-[11px] opacity-70'>VaR (95%)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>-17.0%</div><div className='text-[11px] opacity-70'>VaR (99%)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>-14.8%</div><div className='text-[11px] opacity-70'>CVaR (95%)</div></div>
-              </div>
-            </CardContent>
-          </Card>
+      <Block title='The regime model'>
+        <Figure src={IMG + 'regimes.png'} alt='Two panels for the synthetic history, 2020 to 2025. Top: the synthetic price with shaded spans where the model says the market is stressed. Bottom: the smoothed probability of the stressed regime, which rises to near 1 over grey bands marking the days the generator was actually stressed.' caption='Synthetic history. Top: simulated price with the spans the model labels stressed. Bottom: smoothed probability of the stressed regime against the generator’s true stressed days (grey).' />
+        <DataTable head={['Parameters', 'Calm vol', 'Stressed vol', 'Stay calm', 'Stay stressed']} rows={[
+          ['True', '0.80%', '2.20%', '0.985', '0.94'],
+          ['Estimated', '0.81%', '2.11%', '0.982', '0.89'],
+        ]} />
+        <p>It labels 95% of days correctly. Today’s state, where every simulation starts, and every day of the VaR backtest come from the forward filter, which only sees data up to that day; tests check that changing later returns changes nothing earlier. Each state’s Student-t has 5 degrees of freedom, and refitting with 3 to 30 shows the likelihood peaks at 5 on both the synthetic history and the S&amp;P 500.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Scenario Fan Chart</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <FanChart />
-              <p className='opacity-90'>The median path drifts to about +5% by day 90, but the band is wide and asymmetric: the 5th-percentile path is still underwater at -11%, which is exactly why "expected return" alone is a bad reason to buy anything.</p>
-            </CardContent>
-          </Card>
+      <Block title='Backtesting 1-day VaR'>
+        <Figure src={IMG + 'var_backtest.png'} alt='Synthetic history, last 500 days: grey bars of daily returns with four 1-day 95% VaR lines (historical, EWMA, GARCH and regime HMM) below them, and dots marking the days the regime VaR was breached.' caption='Synthetic history, last 500 days: 1-day 95% VaR from each method against the next day’s return (grey bars), with breaches of the regime VaR marked.' />
+        <p>A 95% VaR should be breached on about 5% of days (Kupiec test), and a breach today shouldn’t make one tomorrow more likely (Christoffersen independence test). Over the last 1,250 synthetic days:</p>
+        <DataTable head={['Method', 'Breach rate', 'Kupiec p', 'Breach after breach', 'Independence p']} rows={[
+          ['Historical, 250-day window', '5.4%', '0.48', '16%', '0.00'],
+          ['EWMA (λ = 0.94)', '4.6%', '0.55', '10%', '0.06'],
+          ['GARCH(1,1), Student-t', '5.1%', '0.85', '11%', '0.06'],
+          ['Regime HMM', '4.7%', '0.65', '12%', '0.02'],
+        ]} />
+        <p>All four get the overall rate right. Historical VaR fails badly on clustering. The regime model is better but still fails at the 5% level: it only recognises a new stressed spell after a few bad days, and those first days are where breaches bunch up. GARCH passes both tests with the smallest average VaR. The regime model is better at “what does the next quarter look like” than “what happens tomorrow”.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Terminal Return Distribution</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ReturnHistogram />
-              <p className='opacity-90'>CVaR (the average of outcomes worse than the VaR cutoff) at -14.8% is noticeably worse than the VaR itself at -11.1%. The left tail isn't just crossing the line, it keeps going once it does.</p>
-            </CardContent>
-          </Card>
+      <Block title='Real data: the S&P 500'>
+        <Figure src={IMG + 'sp500_regimes.png'} alt='Two panels for the S&P 500, late 2016 to 2026. Top: 21-day realised volatility in percent a year, with shaded stressed spans in early 2018, late 2018, 2019, 2020 (where volatility spikes to about 95%), late 2021 to early 2023, 2024 and April 2025 (about 50%). Bottom: the smoothed probability of the stressed regime.' caption='S&P 500: 21-day realised volatility (annualised) with the spans the model labels stressed, and the smoothed stressed-regime probability. No index levels are shown.' />
+        <p>Calm days have 0.66% daily volatility and stressed days 1.71%. Both regimes are very persistent (0.990 and 0.977 chance of staying), so stressed spells last about 44 trading days on average. The market is calm today (2% chance of a stressed day tomorrow), so every method says hold: regime-aware median +5.6%, VaR95 −10.3%. Started from a stressed market, the same simulation gives median +0.8% and VaR95 −19.3%, so a rule like this should be re-run when the regime changes, not once a quarter.</p>
+        <DataTable head={['1-day VaR, 2,263 days', 'Breach rate', 'Kupiec p', 'Breach after breach', 'Independence p']} highlight={1} rows={[
+          ['Historical, 250-day window', '5.5%', '0.30', '17%', '0.00'],
+          ['EWMA', '5.7%', '0.13', '8%', '0.32'],
+          ['GARCH(1,1), Student-t', '7.8%', '0.00', '10%', '0.24'],
+          ['Regime HMM', '6.9%', '0.00', '12%', '0.02'],
+        ]} />
+        <p>The ranking flips. GARCH, the best method on synthetic data, breaches on 7.8% of days, and EWMA, the simplest, is the only method that passes both tests. Real index returns are skewed to the left (skewness −0.37), which a symmetric Student-t can’t capture. Model rankings from synthetic data don’t transfer automatically, which is the reason to run on real data at all.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Decision Rule</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`HURDLE = +3%     RISK_BUDGET (VaR95) = -12%\nMedian 90d return: +5.05%  (> hurdle ✓)\nVaR95:            -11.14%  (> risk budget ✓)\n→ Signal: BUY`}</code></pre>
-              <p className='mt-3 opacity-90 text-xs'>The rule is deliberately conservative: either condition failing flips the call to HOLD/SELL, so a strong median return alone can't override a risk-budget breach.</p>
-            </CardContent>
-          </Card>
+      <Block title='What broke along the way'>
+        <Bullets items={[
+          <><b>Gaussian states.</b> My first version read every big move in a calm market as a one-day trip into the stressed state, and estimated stressed spells of about 3 days instead of the true ~17. Student-t states fixed it: stressed persistence went from 0.67 to 0.89 (true 0.94) and labelling accuracy from 91% to 95%.</>,
+          <><b>Most-likely labels.</b> Giving each past day only to its most likely regime inflated the simulated volatility by 13–61% in five of six test samples with no regimes at all, and left the stressed pool empty in the sixth. Weighting days by regime probability fixed it, and there are tests for it.</>,
+          <><b>GARCH on the real index.</b> Breaching 7.8% of days looked like a bug, but its forecasts match the arch package’s exactly. A fat-tailed t has a thinner 5% quantile than a normal (−1.57σ against −1.64σ), and the fitted mean nudges VaR up; a skewed-t is the next thing to try.</>,
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Repo Structure</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`stock_sim/\n├─ data/ (synthetic daily returns)\n├─ regimes.py\n├─ simulate.py\n├─ risk.py     # VaR / CVaR\n└─ charts.py`}</code></pre>
-            </CardContent>
-          </Card>
-        </div>
+      <Block title='How it works'>
+        <Steps items={[
+          { title: 'History', text: 'a synthetic two-regime history with a known future, FRED’s S&P 500 file, or your own price CSV, with at least 500 daily returns.' },
+          { title: 'Regimes', text: 'a two-state Student-t HMM fitted by EM, a forward filter for today’s state with no look-ahead, and a smoother for the resampling weights.' },
+          { title: 'Next quarter', text: 'six simulation methods over 63 trading days, each summarised as median, VaR95, CVaR95 and drawdown, with a Monte Carlo interval on VaR and the hold-or-reduce call.' },
+          { title: 'Backtest', text: 'rolling 1-day VaR from four methods, refitted on an expanding window, scored with Kupiec and Christoffersen tests.' },
+          { title: 'Method study', text: 'the simulation methods on 40 synthetic histories, each scored against the true process.' },
+        ]} />
+        <p className='opacity-80'>Python 3.12; the HMM is plain NumPy with no HMM library, SciPy for distributions and tests, the arch package for the GARCH baseline, matplotlib for the charts.</p>
+      </Block>
 
-        <ProjectPager slug='stock' />
-      </div>
-      </main>
-    </div>
+      <Block title='Limitations'>
+        <Bullets items={[
+          'Two regimes is a simplification; real markets have more states and slowly changing volatility.',
+          'The regime pools are only as good as the history: a crisis worse than anything in the data can’t be simulated by resampling it. Stress scenarios complement this; they aren’t replaced by it.',
+          'The Student-t states are symmetric with degrees of freedom fixed at 5. On the S&P 500 that makes the direct simulation too optimistic and the 1-day HMM and GARCH VaRs breach too often.',
+          'One history can’t settle a VaR this close to the budget: the error from six years of data is larger than the differences between methods.',
+          'One asset, no transaction costs, no position sizing. The decision rule is illustrative, and this isn’t investment advice.',
+        ]} />
+      </Block>
+
+      <CodeNote tests={57} extras={['a 40-history method study', 'a one-page risk report']} />
+    </CaseStudyPage>
   )
 }

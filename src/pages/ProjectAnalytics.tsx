@@ -1,230 +1,105 @@
+import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, DashboardLink, CodeNote } from '../components/CaseStudy'
 
-import React from 'react'
-import { ProjectBreadcrumb, ProjectPager } from '../components/ProjectNav'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import AmbientBackground from '../components/AmbientBackground'
-import { useHeadMeta } from '../hooks/useHeadMeta'
+const IMG = '/projects/analytics/'
 
-// Sequential single-hue blue ramp (magnitude), light -> dark, matching the site's accent scale.
-const BLUE_RAMP = ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8']
-function rampColor(pct: number) {
-  // pct in [0,100] -> ramp index
-  const idx = Math.max(0, Math.min(BLUE_RAMP.length - 1, Math.round((pct / 100) * (BLUE_RAMP.length - 1))))
-  return BLUE_RAMP[idx]
-}
-function textColorFor(pct: number) {
-  return pct >= 45 ? '#ffffff' : '#0f172a'
-}
-
-// Synthetic monthly-cohort retention data (illustrative sample, not real company data).
-// Each row is a signup cohort; null = not yet observed (that many months haven't elapsed yet).
-// The empty upper-right triangle is intentional; that's how real cohort tables look.
-type CohortRow = { cohort: string; values: (number | null)[] }
-const COHORTS: CohortRow[] = [
-  { cohort: 'Jan 2026', values: [100, 48, 42, 36, 33, 32] },
-  { cohort: 'Feb 2026', values: [100, 51, 43, 38, 36, null] },
-  { cohort: 'Mar 2026', values: [100, 51, 41, 38, null, null] },
-  { cohort: 'Apr 2026', values: [100, 53, 44, null, null, null] },
-  { cohort: 'May 2026', values: [100, 52, null, null, null, null] },
-]
-const MONTH_LABELS = ['M0', 'M1', 'M2', 'M3', 'M4', 'M5']
-
-function CohortHeatmap() {
-  const rowLabelW = 92
-  const cellW = 66
-  const cellH = 38
-  const gap = 4
-  const headerH = 26
-  const width = rowLabelW + MONTH_LABELS.length * (cellW + gap)
-  const height = headerH + COHORTS.length * (cellH + gap)
-
+export default function Page() {
   return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${width} ${height}`} width='100%' style={{ maxWidth: width }} role='img' aria-label='Monthly cohort retention heatmap'>
-        {MONTH_LABELS.map((m, ci) => (
-          <text key={m} x={rowLabelW + ci * (cellW + gap) + cellW / 2} y={headerH - 8} textAnchor='middle' fontSize='11' fontFamily='monospace' fill='currentColor' opacity={0.65}>{m}</text>
-        ))}
-        {COHORTS.map((row, ri) => (
-          <g key={row.cohort}>
-            <text x={0} y={headerH + ri * (cellH + gap) + cellH / 2 + 4} fontSize='11' fill='currentColor' opacity={0.75}>{row.cohort}</text>
-            {row.values.map((v, ci) => {
-              const x = rowLabelW + ci * (cellW + gap)
-              const y = headerH + ri * (cellH + gap)
-              if (v === null) {
-                return (
-                  <rect key={ci} x={x} y={y} width={cellW} height={cellH} rx={6}
-                    fill='none' stroke='currentColor' strokeOpacity={0.12} strokeDasharray='3 3' />
-                )
-              }
-              return (
-                <g key={ci}>
-                  <rect x={x} y={y} width={cellW} height={cellH} rx={6} fill={rampColor(v)}>
-                    <title>{row.cohort} · {MONTH_LABELS[ci]}: {v}% retained</title>
-                  </rect>
-                  <text x={x + cellW / 2} y={y + cellH / 2 + 4} textAnchor='middle' fontSize='12' fontWeight={600} fill={textColorFor(v)}>{v}%</text>
-                </g>
-              )
-            })}
-          </g>
-        ))}
-      </svg>
-    </div>
-  )
-}
+    <CaseStudyPage slug='analytics' lede='Two questions a growth team asks every month, “do new customers come back?” and “where do shoppers drop out?”, answered in SQL, checked twice over, and rerun on a real retailer’s invoices.'>
 
-type FunnelStage = { label: string; value: number }
-const FUNNEL: FunnelStage[] = [
-  { label: 'Viewed Product', value: 12000 },
-  { label: 'Added to Cart', value: 3962 },
-  { label: 'Checked Out', value: 2220 },
-  { label: 'Purchased', value: 1681 },
-]
+      <Block title='Overview'>
+        <p>The two questions sound alike but need different denominators. Retention is a cohort question, counted per customer; drop-off is a funnel question, counted per session. The answers feed two decisions: how much each acquisition channel can cost per customer before it loses money, and whether a product change (here a mobile checkout fix) earned its keep.</p>
+        <p>The pipeline audits the tables (keys, dates, every purchase event reconciled to exactly one order), runs six SQL reports in SQLite, adds Wilson intervals and a difference-in-differences estimate, and writes report CSVs, a summary and a single-file offline dashboard.</p>
+        <Bullets items={[
+          <><b>Synthetic store:</b> a two-year event log (2024–2025) with 11,092 customers, 141,422 sessions and 17,038 orders, with effects planted on purpose so the analysis can be checked against known answers.</>,
+          <><b>Real data:</b> Online Retail II, two years of invoices from a UK online gift retailer (Chen, 2019, CC BY 4.0). It has orders but no sessions, so the cohort, value and revenue reports run on it unchanged and the funnel reports don’t.</>,
+        ]} />
+        <p className='opacity-70 text-xs'>Every report is computed twice more, in plain pandas and in a real PostgreSQL 16 instance, and the tests check they agree.</p>
+      </Block>
 
-function FunnelChart() {
-  const width = 560
-  const barH = 34
-  const gap = 22
-  const labelW = 140
-  const maxVal = FUNNEL[0].value
-  const plotW = width - labelW - 70
-  const height = FUNNEL.length * (barH + gap)
+      <Block title='Headline numbers'>
+        <Stats items={[
+          { value: '7.5%', label: 'Paid-social customers buying in month 3 (other channels 19–22%)' },
+          { value: '$162 vs $321', label: '12-month value: paid social vs email' },
+          { value: '+20.0 pts', label: 'Mobile checkout fix (95% CI 17.4–23.1; true +19)' },
+          { value: '92%', label: 'Real retailer’s revenue from returning customers' },
+        ]} />
+        <p>Paid social brings customers who don’t stay, the checkout fix worked by about as much as the generator says it should, and on the real retailer retention, not acquisition, is the business.</p>
+      </Block>
 
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${width} ${height}`} width='100%' style={{ maxWidth: width }} role='img' aria-label='Purchase funnel conversion chart'>
-        {FUNNEL.map((s, i) => {
-          const w = Math.max(4, (s.value / maxVal) * plotW)
-          const y = i * (barH + gap)
-          const pctOfPrev = i === 0 ? null : Math.round((s.value / FUNNEL[i - 1].value) * 1000) / 10
-          const color = BLUE_RAMP[3 + i] // monotone lightness steps, ordinal by funnel stage
-          return (
-            <g key={s.label}>
-              <text x={0} y={y + barH / 2 + 4} fontSize='12' fill='currentColor' opacity={0.8}>{s.label}</text>
-              <rect x={labelW} y={y} width={w} height={barH} rx={4} fill={color}>
-                <title>{s.label}: {s.value.toLocaleString()}{pctOfPrev !== null ? ` (${pctOfPrev}% of previous step)` : ''}</title>
-              </rect>
-              <text x={labelW + w + 8} y={y + barH / 2 + 4} fontSize='12' fontWeight={600} fill='currentColor'>{s.value.toLocaleString()}</text>
-              {pctOfPrev !== null && (
-                <text x={labelW + w + 8} y={y + barH / 2 + 18} fontSize='10' fill='currentColor' opacity={0.55}>↓ {pctOfPrev}%</text>
-              )}
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
+      <Block title='Paid social brings customers who don’t stay'>
+        <Figure src={IMG + 'retention_by_channel.png'} alt='Line chart of the share of customers buying again in each of months 1 to 12 after their first order, by acquisition channel, with shaded 95% Wilson intervals. Paid social sits around 5–11%, well below email, organic and paid search at roughly 12–27%.' caption='Share of each channel’s customers who buy again N months after their first order, pooled over cohorts old enough to reach that month. Bands are 95% Wilson intervals.' />
+        <p>Three months after their first order, 7.5% of paid-social customers buy again, against 19–22% for every other channel, and the intervals don’t come close. Over their first 12 months (the first-order month plus the next 11) a paid-social customer spends $162 on average, against $321 for one acquired by email. That gap is the ceiling on what paid social can cost per customer.</p>
+        <DataTable head={['Channel', 'Month-3 retention', '95% CI', '12-month value']} highlight={3} rows={[
+          ['Email', '21.8%', '19.5–24.3%', '$321'],
+          ['Organic', '19.4%', '17.6–21.3%', '$277'],
+          ['Paid search', '19.2%', '17.1–21.5%', '$249'],
+          ['Paid social', '7.5%', '5.8–9.6%', '$162'],
+        ]} />
+      </Block>
 
-const COHORT_SQL = `-- Monthly cohort retention (PostgreSQL)
-WITH cohorts AS (
-  SELECT customer_id,
-         DATE_TRUNC('month', MIN(order_date)) AS cohort_month
-  FROM orders
-  GROUP BY customer_id
-),
-activity AS (
-  SELECT o.customer_id,
-         c.cohort_month,
-         DATE_TRUNC('month', o.order_date) AS activity_month
-  FROM orders o
-  JOIN cohorts c ON c.customer_id = o.customer_id
-)
-SELECT
-  cohort_month,
-  DATE_PART('month', AGE(activity_month, cohort_month)) AS month_number,
-  COUNT(DISTINCT customer_id) AS active_customers
-FROM activity
-GROUP BY 1, 2
-ORDER BY 1, 2;`
+      <Block title='Mobile checkout was the leak, and the fix worked'>
+        <Figure src={IMG + 'checkout_trend.png'} alt='Line chart of monthly checkout completion by device, January 2024 to December 2025. Desktop stays near 75–80% throughout; mobile runs around 50–57% until a dashed line marking the June 2025 mobile checkout fix, then jumps to about 70–74%.' caption='Share of checkouts that become purchases, by device and month. The dashed line marks the 2025-06-01 mobile checkout change.' />
+        <p>Mobile and desktop shoppers add to cart at the same rate (35%), so the leak is later. Mobile completed 53% of checkouts in the six months before the 2025-06-01 checkout change and 72% in the six months after; desktop went from 78% to 77% over the same months, so it serves as the control. The difference-in-differences is <b>+20.0 points (95% CI 17.4–23.1)</b>, from 1,000 bootstraps that resample customers rather than sessions, because one customer’s sessions aren’t independent. The generator’s true effect is +19.</p>
+        <p>The funnel only counts a step if it happens after the previous one in the same session. Over the full two years:</p>
+        <DataTable head={['Device', 'View → cart', 'Cart → checkout', 'Checkout → purchase', 'View → purchase']} rows={[
+          ['Desktop', '35.1%', '55.1%', '77.4%', '15.0%'],
+          ['Mobile', '34.5%', '47.0%', '61.9%', '10.1%'],
+        ]} />
+      </Block>
 
-const FUNNEL_SQL = `-- Purchase funnel conversion (PostgreSQL)
-SELECT
-  COUNT(DISTINCT CASE WHEN step = 'viewed'        THEN user_id END) AS viewed,
-  COUNT(DISTINCT CASE WHEN step = 'added_to_cart'  THEN user_id END) AS added_to_cart,
-  COUNT(DISTINCT CASE WHEN step = 'checked_out'    THEN user_id END) AS checked_out,
-  COUNT(DISTINCT CASE WHEN step = 'purchased'      THEN user_id END) AS purchased
-FROM funnel_events
-WHERE event_date >= CURRENT_DATE - INTERVAL '30 days';`
-
-export default function ProjectAnalytics() {
-  useHeadMeta({ title: 'Customer Retention & Revenue Analytics', description: 'SQL cohort retention & purchase-funnel analysis, presented as an interactive dashboard.', path: '/projects/analytics' })
-  return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
-      <AmbientBackground/>
-      <main id='main-content'>
-      <div className='section'>
-        <div className='section-stripe'></div>
-        <ProjectBreadcrumb slug='analytics' />
-        <h1 className='section-title'>Customer Retention & Revenue Analytics</h1>
-        <p className='text-center opacity-80 max-w-2xl mx-auto'>SQL-driven cohort retention and purchase-funnel analysis, built into an interactive dashboard for a stakeholder audience.</p>
-        <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['SQL','PostgreSQL','Cohort Analysis','Funnel Analysis','Dashboarding'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
+      <Block title='The dashboard'>
+        <Figure src={IMG + 'dashboard_preview.png'} alt='Top of the retention dashboard: KPI tiles for revenue ($1,422,453), buying customers (6,010 of 11,092 signups), month-1 retention (21%), repeat revenue share (60%) and session conversion (12.0%), above a cohort-by-month retention heatmap whose unobserved cells are left blank.' caption='The top of the synthetic-store dashboard: KPI tiles, then cohort retention with months a cohort hasn’t reached left blank rather than shown as zero.' />
+        <p>The dashboard is one HTML file with no external requests, so it can be emailed or dropped into a shared drive. On the synthetic store, 6,010 of 11,092 signups bought, 12.0% of sessions ended in a purchase, 21% of new customers bought again the next month, and returning customers brought in 60% of revenue.</p>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+          <DashboardLink href='/dashboards/retention.html' label='Synthetic store dashboard' note='Cohorts, channel curves, funnel and checkout trend' />
+          <DashboardLink href='/dashboards/retention-online-retail.html' label='Online Retail II dashboard' note='The same reports on real invoices, without the funnel' />
         </div>
+      </Block>
 
-        <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
-          <Card>
-            <CardHeader><CardTitle>Business Question</CardTitle></CardHeader>
-            <CardContent className='text-sm leading-relaxed space-y-2'>
-              <p className='opacity-90'>Two questions a growth/marketing stakeholder actually asks: <em>"Are new customers sticking around?"</em> and <em>"Where in the purchase path are we losing people?"</em> This project answers both with plain SQL against an orders/events schema, laid out as the dashboard a non-technical stakeholder could actually read.</p>
-              <p className='opacity-70 text-xs'>I generated the customer/order/funnel data myself (2,430 customers, 5,599 orders, 19,863 funnel events) rather than pulling in a real e-commerce dataset. Partly that's a privacy thing (I didn't want to run this against anything traceable to actual people), and partly the public retail datasets that fit this shape tend to come with licensing terms I'd rather not gamble on for a portfolio piece. Once that data was sitting in a real PostgreSQL 16 database, though, every query and every number in the charts below came from actually running them.</p>
-            </CardContent>
-          </Card>
+      <Block title='Real data: Online Retail II'>
+        <p>The cleaning turns 1,067,371 invoice lines into 35,534 orders from 5,812 customers (£16.0M, December 2009 to November 2011): lines without a customer ID and 26,481 exact duplicates go, only product lines stay, and each cancellation is netted against the sales it cancels, latest first.</p>
+        <p>There are no channels, so customers are split into segments, and the start of the data decides what “new” can mean. Someone first seen in 2010 may be new or may be an older customer returning after a gap. Only customers whose first order is from December 2010 on, with none in the 12 months before, count as new.</p>
+        <Figure src={IMG + 'retail_retention_by_segment.png'} alt='Line chart of the share of Online Retail II customers buying again in months 1 to 12, by segment, with 95% Wilson bands. Customers existing at the start sit around 33–50%; the other three segments sit around 11–27%, and the new-outside-UK band is very wide.' caption='Online Retail II: share of each segment buying again N months after its first order in the data, with 95% Wilson intervals.' />
+        <DataTable head={['Segment', 'Customers', 'Month-1 retention', '6-month value']} rows={[
+          ['Existing at start (Dec 2009)', '951', '34.8%', '£2,382'],
+          ['First seen Jan–Nov 2010', '3,275', '20.1%', '£909'],
+          ['New UK', '1,401', '23.0%', '£754'],
+          ['New outside UK', '185', '20.6%', '£1,213'],
+        ]} />
+        <Bullets items={[
+          'About one new customer in five buys again the next month: 23% of new UK customers (95% CI 21–25%), flattening to about 17% in months 5–8.',
+          'New customers outside the UK come back about as often but spend 1.6× as much in their first six months (bootstrap 95% CI 1.1–2.2×). That rests on only 94 customers, so it’s a lead to check, not a budget.',
+          'From December 2010, when new customers can be identified, returning customers bring in 92% of revenue, with about 132 first orders a month.',
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Approach</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <ul className='list-disc pl-5 space-y-2 opacity-90'>
-                <li>Defined each customer's <strong>cohort month</strong> as the month of their first order, then tracked what share of each cohort placed another order in each following month.</li>
-                <li>Modeled the checkout path as four events (<code>viewed</code> → <code>added_to_cart</code> → <code>checked_out</code> → <code>purchased</code>) and computed conversion between consecutive steps.</li>
-                <li>Surfaced both as a compact dashboard: a retention heatmap (where the color <em>is</em> the number) and a funnel chart with drop-off called out at each stage, the two views a stakeholder deck usually needs.</li>
-              </ul>
-            </CardContent>
-          </Card>
+      <Block title='What broke, and a trap in the real data'>
+        <p><b>A bug the tests caught.</b> In my first generator, two funnel steps could get the same timestamp, so the strict “after the previous step” join quietly dropped about 11% of carts.</p>
+        <p><b>Who counts as new.</b> Treating the invoices as if they started in December 2010 and counting first orders in 2011 gives about 309 “new” customers a month; with the full year of history before them it’s 137. With a short lookback, more than half of the apparent new customers are returning ones, which is why the segments above exist.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Cohort Retention SQL</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{COHORT_SQL}</code></pre>
-            </CardContent>
-          </Card>
+      <Block title='How it works'>
+        <Steps items={[
+          { title: 'Data', text: 'generate a synthetic event log with planted effects, read your own CSV export, or clean the Online Retail II invoices into the same customers and orders tables.' },
+          { title: 'Audit', text: 'keys, foreign keys, ISO dates and positive amounts, and every purchase event reconciled to exactly one order before any SQL runs.' },
+          { title: 'SQL reports', text: 'cohort retention, retention curves by channel, value per customer, an ordered session funnel, monthly checkout completion and new-vs-returning revenue, each with its denominator documented.' },
+          { title: 'Statistics', text: 'Wilson intervals on retention rates, and a difference-in-differences estimate for the checkout change with a customer-level bootstrap.' },
+          { title: 'Outputs', text: 'report CSVs, a summary file, a single-file offline dashboard and the figures, for each dataset.' },
+        ]} />
+        <p className='opacity-80'>Python 3.12 and SQLite, with a PostgreSQL 16 port of every report; pandas, NumPy and matplotlib. 49 tests, including recomputing each report in pandas and comparing it with PostgreSQL.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Dashboard: Monthly Cohort Retention</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-3'>
-              <CohortHeatmap />
-              <p className='text-xs opacity-70'>Darker = higher retention. Dashed cells haven't had time to reach that month yet: a normal, unavoidable gap in any live cohort table, not missing data.</p>
-              <p className='opacity-90'>Reading it: roughly half of new customers return at all after month 0, and retention flattens around 32–38% by month 3–5. That plateau is the more decision-useful number than month-1 alone, since it's roughly the "true" long-run repeat-purchase rate.</p>
-            </CardContent>
-          </Card>
+      <Block title='Limitations'>
+        <Bullets items={[
+          'Cohorts are 80–380 customers, so single heatmap cells move by ±5 points from noise alone; the channel curves pool cohorts for that reason.',
+          'The checkout comparison is a difference-in-differences, not an experiment. It assumes mobile and desktop would have moved in parallel without the fix, plausible here because desktop is flat, but I’d still want an A/B test before crediting a real change.',
+          'The synthetic patterns were built into the generator; the point is whether the method finds and measures them correctly.',
+          'Online Retail II has no channels, sessions or costs, so it says nothing about the funnel or acquisition payback. It’s one retailer, and partly a wholesaler.',
+          'Only twelve monthly cohorts in Online Retail II are known to be new. New-customer curves past month 8 and their 12-month value are too thin to quote, and there’s no new-customer trend to report.',
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Funnel SQL</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{FUNNEL_SQL}</code></pre>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Dashboard: Purchase Funnel</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-3'>
-              <FunnelChart />
-              <p className='opacity-90'>The steepest drop is actually the top of the funnel: viewed to added-to-cart (only 33.0% continue), not cart-to-checkout (56.0%) or checkout-to-purchase (75.7%). That points the highest-leverage fix at the product page itself (pricing, images, perceived trust) rather than checkout friction, which is the more common assumption.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Repo Structure</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`retention_analytics/\n├─ generate_data.py     # builds customers/orders/funnel_events.csv\n├─ sql/\n│  ├─ cohort_retention.sql\n│  └─ funnel_conversion.sql\n├─ load.sql             # creates tables, \\copy loads the CSVs\n├─ data/ (customers.csv, orders.csv, funnel_events.csv)\n└─ README.md`}</code></pre>
-            </CardContent>
-          </Card>
-        </div>
-
-        <ProjectPager slug='analytics' />
-      </div>
-      </main>
-    </div>
+      <CodeNote tests={49} extras={['a PostgreSQL port of all six reports', 'the offline dashboards']} />
+    </CaseStudyPage>
   )
 }

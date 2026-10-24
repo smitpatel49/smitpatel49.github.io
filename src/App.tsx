@@ -17,12 +17,11 @@ import ProjectAccountRisk from './pages/ProjectAccountRisk'
 import AmbientBackground from './components/AmbientBackground'
 import { projects } from './data/projects'
 import { useHeadMeta } from './hooks/useHeadMeta'
+import { EMAIL, GITHUB, LINKEDIN } from './data/site'
 
 const TITLE = 'Data Scientist & Analytics Professional'
 const LOCATION = 'Chicago, IL'
-const EMAIL = 'smit@itjobinbox.com'
-const GITHUB = 'https://github.com/smitpatel49'
-const LINKEDIN = 'https://www.linkedin.com/in/smitpatel7/'
+
 
 const skillGroups = [
   { group: 'Languages & Core', items: ['Python','SQL','Pandas','NumPy','Statistics'] },
@@ -444,7 +443,7 @@ function ChurnDemo(){
       </div>
       <div className='mt-4 text-sm'>Churn Probability: <span className='font-medium'>{pct}%</span></div>
       <div className='h-2 rounded bg-neutral-200 dark:bg-neutral-800 mt-2'><div className='h-2 rounded bg-neutral-900 dark:bg-neutral-100' style={{ width: String(pct) + '%' }} /></div>
-      <div className='mt-3 text-xs opacity-70'>*Heuristic demo; production used LightGBM features.</div>
+      <div className='mt-3 text-xs opacity-70'>*A toy scoring formula to show the idea; it isn't one of the projects below.</div>
     </div>
   )
 }
@@ -560,7 +559,7 @@ function NerDemo(){
       <div className='mt-3 text-sm leading-relaxed'>
         {ents.map((e,i)=>(<span key={i} className='px-1.5 py-0.5 rounded-md border mr-1'>{e.text} <span className='opacity-60 text-xs'>{e.label}</span></span>))}
       </div>
-      <div className='mt-2 text-xs opacity-70'>Rule-based preview; production used BERT/GPT fine-tuning.</div>
+      <div className='mt-2 text-xs opacity-70'>Rule-based toy example; it isn't one of the projects below.</div>
     </div>
   )
 }

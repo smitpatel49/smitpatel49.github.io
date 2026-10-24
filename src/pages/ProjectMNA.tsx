@@ -1,191 +1,84 @@
+import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-import React from 'react'
-import { ProjectBreadcrumb, ProjectPager } from '../components/ProjectNav'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import AmbientBackground from '../components/AmbientBackground'
-import { useHeadMeta } from '../hooks/useHeadMeta'
-
-const ACCRETIVE = '#2563eb' // blue (good / accretive)
-const DILUTIVE = '#f59e0b'  // amber (caution / dilutive)
-
-type Bin = { lo:number; hi:number; count:number }
-const HIST: Bin[] = [
-  {lo:-6.05,hi:-5.29,count:4},{lo:-5.29,hi:-4.54,count:25},{lo:-4.54,hi:-3.79,count:98},
-  {lo:-3.79,hi:-3.03,count:245},{lo:-3.03,hi:-2.28,count:482},{lo:-2.28,hi:-1.53,count:776},
-  {lo:-1.53,hi:-0.77,count:1194},{lo:-0.77,hi:-0.02,count:1625},{lo:-0.02,hi:0.73,count:1993},
-  {lo:0.73,hi:1.49,count:2300},{lo:1.49,hi:2.24,count:2260},{lo:2.24,hi:2.99,count:2206},
-  {lo:2.99,hi:3.75,count:1805},{lo:3.75,hi:4.5,count:1569},{lo:4.5,hi:5.25,count:1250},
-  {lo:5.25,hi:6.01,count:797},{lo:6.01,hi:6.76,count:591},{lo:6.76,hi:7.52,count:379},
-  {lo:7.52,hi:8.27,count:224},{lo:8.27,hi:9.02,count:104},{lo:9.02,hi:9.78,count:47},
-  {lo:9.78,hi:10.53,count:16},{lo:10.53,hi:11.28,count:7},{lo:11.28,hi:12.04,count:3},
-]
-
-function AccretionHistogram(){
-  const W=620, H=260, padL=36, padB=28, padT=10, padR=10
-  const plotW=W-padL-padR, plotH=H-padT-padB
-  const maxCount = Math.max(...HIST.map(b=>b.count))
-  const xMin = HIST[0].lo, xMax = HIST[HIST.length-1].hi
-  const sx=(v:number)=>padL+((v-xMin)/(xMax-xMin))*plotW
-  const barW = plotW/HIST.length - 2
-  const zeroX = sx(0)
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Distribution of simulated EPS accretion/dilution'>
-        <line x1={zeroX} y1={padT} x2={zeroX} y2={H-padB} stroke='currentColor' strokeOpacity={0.35} strokeDasharray='4 3' />
-        {HIST.map((b,i)=>{
-          const h = (b.count/maxCount)*plotH
-          const x = sx(b.lo)
-          const y = H-padB-h
-          const color = b.hi<=0 ? DILUTIVE : ACCRETIVE
-          return <rect key={i} x={x} y={y} width={barW} height={h} fill={color} fillOpacity={0.9}>
-            <title>{b.lo}% to {b.hi}%: {b.count.toLocaleString()} trials</title>
-          </rect>
-        })}
-        {[xMin,0,xMax].map(v=>(
-          <text key={v} x={sx(v)} y={H-8} fontSize='9' textAnchor='middle' fill='currentColor' opacity={0.65}>{v>0?'+':''}{v.toFixed(0)}%</text>
-        ))}
-        <text x={W/2} y={H-1} fontSize='0'></text>
-      </svg>
-      <div className='flex gap-4 justify-center text-xs mt-1 opacity-75'>
-        <span className='flex items-center gap-1'><span className='w-2.5 h-2.5 rounded-sm inline-block' style={{background:DILUTIVE}}/> Dilutive</span>
-        <span className='flex items-center gap-1'><span className='w-2.5 h-2.5 rounded-sm inline-block' style={{background:ACCRETIVE}}/> Accretive</span>
-      </div>
-    </div>
-  )
-}
-
-const SENSITIVITY: [string, number][] = [
-  ['Cash % of Financing', 0.882],
-  ['Purchase Premium', -0.533],
-  ['Debt % of Financing', 0.288],
-  ['Pretax Synergies', 0.212],
-]
-
-function TornadoChart(){
-  const W=560, H= SENSITIVITY.length*44 + 20, midX = W/2, maxAbs = Math.max(...SENSITIVITY.map(([,v])=>Math.abs(v)))
-  const scale = (W/2 - 90)/maxAbs
-  return (
-    <div className='overflow-x-auto'>
-      <svg viewBox={`0 0 ${W} ${H}`} width='100%' style={{maxWidth:W}} role='img' aria-label='Sensitivity of EPS accretion to deal inputs'>
-        <line x1={midX} y1={10} x2={midX} y2={H-10} stroke='currentColor' strokeOpacity={0.3} />
-        {SENSITIVITY.map(([name,val],i)=>{
-          const y = 20 + i*44
-          const w = Math.abs(val)*scale
-          const x = val>=0 ? midX : midX-w
-          const color = val>=0 ? ACCRETIVE : DILUTIVE
-          return (
-            <g key={name}>
-              <text x={midX} y={y-8} fontSize='11' textAnchor='middle' fill='currentColor' opacity={0.8}>{name}</text>
-              <rect x={x} y={y} width={w} height={20} rx={3} fill={color}>
-                <title>{name}: standardized effect {val.toFixed(3)}</title>
-              </rect>
-              <text x={val>=0 ? x+w+6 : x-6} y={y+14} fontSize='10' textAnchor={val>=0?'start':'end'} fill='currentColor' opacity={0.8}>{val>0?'+':''}{val.toFixed(2)}</text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
-const SIM_CODE = `premium = rng.triangular(0.20, 0.45, 0.90, N)         # deal premium
-synergy_pretax = rng.triangular(3e6, 10e6, 22e6, N)   # annual pretax synergies
-cash_pct, debt_pct, stock_pct = rng.dirichlet([1.6, 2.2, 2.8], N).T
-
-purchase_price = target_mcap * (1 + premium)
-new_shares = (purchase_price*stock_pct) / (acq_price*0.97)
-combined_ni = acq_ni + tgt_ni + synergy_pretax*(1-TAX) \\
-              - (purchase_price*debt_pct)*DEBT_RATE*(1-TAX) \\
-              - (purchase_price*cash_pct)*CASH_YIELD*(1-TAX)
-accretion = (combined_ni/(acq_shares+new_shares) - acq_eps) / acq_eps
-
-# Sensitivity: standardized regression of accretion on each input,
-# not a naive one-at-a-time tornado, so correlations in the sample stay intact.
-coefs = LinearRegression().fit(zscore(inputs), zscore(accretion)).coef_`
+const IMG = '/projects/mna/'
 
 export default function Page() {
-  useHeadMeta({ title: 'Simulating Company Merger/Acquisition', description: '20,000-trial Monte Carlo on deal accretion, with regression-based sensitivity analysis.', path: '/projects/mna' })
   return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
-      <AmbientBackground/>
-      <main id='main-content'>
-      <div className='section'>
-        <div className='section-stripe'></div>
-        <ProjectBreadcrumb slug='mna' />
-        <h1 className='section-title'>Simulating Company Merger/Acquisition</h1>
-        <p className='text-center opacity-80 max-w-2xl mx-auto'>20,000-trial Monte Carlo on deal premium, synergies, and financing mix, with sensitivity from standardized regression rather than a naive one-at-a-time tornado.</p>
-        <div className='flex gap-2 flex-wrap justify-center mt-4'>
-          {['Python','NumPy','Monte Carlo','scikit-learn','Sensitivity Analysis'].map((t,i)=>(<Badge key={i} variant='outline'>{t}</Badge>))}
+    <CaseStudyPage slug='mna' lede='A deal screen that keeps what the board decides (the financing mix) apart from what nobody controls (premium, synergies, rates, growth), then asks the question EPS can’t answer: is the price below what the target is worth to us?'>
+
+      <Block title='Overview'>
+        <p>The board’s first question about an acquisition is usually “will this dilute our earnings per share, and for how long?” On its own that’s the wrong decision rule: EPS can rise while the price destroys value. This screen answers three questions from one set of assumptions, for a fictional mid-cap buying a smaller competitor for about $660M:</p>
+        <Bullets items={[
+          <><b>Accretion:</b> what happens to EPS in years 1–3, and how likely is it to be accretive?</>,
+          <><b>Financing:</b> which mix of cash, new debt and new shares fits the cash and leverage limits, and how does each change the EPS picture?</>,
+          <><b>Value:</b> is the price below what the target is worth to us, and what’s the highest premium with a positive NPV?</>,
+        ]} />
+        <p className='opacity-70 text-xs'>The companies are made up, so the screen can’t be read as a claim about a real deal. Every number on this page is an output of the committed run (20,000 draws, seed 11).</p>
+      </Block>
+
+      <Block title='Headline numbers'>
+        <Stats items={[
+          { value: '93%', label: 'Accretive by year 3 (proposed mix)' },
+          { value: '5%', label: 'Simulations with a positive NPV' },
+          { value: '−$93M', label: 'Median NPV at the expected price' },
+          { value: '20%', label: 'Walk-away premium (expected: 38%)' },
+        ]} />
+        <p>The deal looks good on EPS and bad on value. The memo the model writes leads with that disagreement and explains it.</p>
+      </Block>
+
+      <Block title='Accretion isn’t value'>
+        <Figure src={IMG + 'value_vs_eps.png'} alt='Year-3 EPS accretion against NPV for each simulated draw' caption='Share of simulations that are accretive (years 2 and 3) or create value, by premium paid. Accretion survives far higher premiums than value does.' />
+        <p>The target’s standalone DCF is $498M of enterprise value, 4% under its market value, so the screen doesn’t find value by assuming the market is wrong. At median inputs, adding synergies ($139M of present value) and subtracting integration costs ($13M) and fees ($10M) makes it worth $614M to us, against $701M paid (equity plus the debt taken on): <b>NPV −$87M</b>. Across the simulations the median NPV is −$93M, positive in only 5%.</p>
+        <p><b>Walk-away premium: 20%</b> at median inputs, 27% if synergies come in at their 90th percentile, 31% if they’re discounted at the WACC instead of WACC + 2 points. Synergies are assumed to keep growing after year 3 with no reinvestment; charging them the same reinvestment as the target’s own DCF cuts the walk-away premium to 15%.</p>
+      </Block>
+
+      <Block title='Why EPS and value disagree'>
+        <p>Not because the target is cheap. At the expected 38% premium its earnings are bought at 20.6× against the acquirer’s own 18×, and the price is above the acquirer’s multiple at any premium over 20%. Paid entirely in stock, the deal is accretive by year 3 in only 32% of simulations; the proposed mix without synergies in 8%, against 93% with them.</p>
+        <p>The accretion comes from the synergies, plus paying partly with debt and cash that cost less after tax (about 5.1% and 2.6%) than the acquirer’s 5.6% earnings yield. That flatters EPS at almost any price, which is why EPS alone is a poor decision rule.</p>
+      </Block>
+
+      <Block title='Financing: which mixes fit, and what they do'>
+        <Figure src={IMG + 'financing_heatmap.png'} alt='Heatmap of year-2 accretion probability by cash, debt and stock share, with infeasible mixes marked' />
+        <p>Each of 66 financing mixes is evaluated against the <i>same</i> 20,000 draws, so differences between structures are the structure, not noise. Tested at a cautious price (the 90th-percentile premium) with fees paid from cash, <b>24 of 66</b> fit the cash and 3.0× leverage limits. The best, 20% cash / 60% debt / 20% stock, has a <b>42%</b> chance of year-2 accretion (the proposed 20/40/40: 27%) and breaks even with $15.9M of run-rate synergies instead of $18.6M. The memo is explicit that this is an accounting effect that adds risk.</p>
+      </Block>
+
+      <Block title='What moves the answer'>
+        <div className='grid grid-cols-1 gap-3'>
+          <Figure src={IMG + 'eps_by_year.png'} alt='Distribution of EPS accretion in years 1, 2 and 3' caption='Year 1 dilutes in every draw; synergies phase in by year 3.' />
+          <Figure src={IMG + 'tornado.png'} alt='Tornado chart of year-2 EPS sensitivity' caption='10th to 90th percentile of each input, the others at their medians.' />
         </div>
+        <p>The premium matters most: moving it from its 10th to 90th percentile swings year-2 EPS by 4.2 points, more than synergy delivery or target growth (3.0 each) or interest rates (2.3). Each scenario below changes one thing and reuses the base draws (year 2):</p>
+        <DataTable head={['Scenario', 'P(accretive)', 'Median', '5th pct']} highlight={0} rows={[
+          ['Base (20% cash / 40% debt / 40% stock)', '27%', '−1.6%', '−5.6%'],
+          ['Pay 10 points more', '7%', '−3.5%', '−7.5%'],
+          ['Synergies at half plan', '4%', '−3.6%', '−7.3%'],
+          ['Rates up 200 bp', '4%', '−4.3%', '−8.5%'],
+          ['Target earnings flat', '12%', '−2.6%', '−6.3%'],
+          ['All-stock deal', '0%', '−5.8%', '−9.2%'],
+        ]} />
+      </Block>
 
-        <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
-          <Card>
-            <CardHeader><CardTitle>Business Question</CardTitle></CardHeader>
-            <CardContent className='text-sm leading-relaxed space-y-2'>
-              <p className='opacity-90'>Deal teams almost never get a single-number answer to "will this be accretive?" The honest answer is a distribution, since the premium paid, synergy realization, and financing mix are all still being negotiated. This models that distribution directly, instead of pretending one base case is the forecast.</p>
-              <p className='opacity-70 text-xs'>The acquirer and target are a made-up profile, not an actual pair of companies. I'd rather not run a simulation against real tickers and let it look like a claim about an actual deal, so I built a clean illustrative case instead. Every number below is still a genuine output of running that simulation, nothing here is filled in by hand.</p>
-            </CardContent>
-          </Card>
+      <Block title='How it works'>
+        <Steps items={[
+          { title: 'Inputs', text: 'deal.json holds the two companies, the financing limits and triangular ranges for every uncertain input; synergies are skewed below plan, because most deals under-deliver.' },
+          { title: 'Simulation', text: '20,000 draws of premium, synergy realisation, integration overrun, debt rate and target growth, shared by every financing mix.' },
+          { title: 'EPS bridge', text: 'pro forma EPS for years 1–3: new shares at an issue discount, after-tax interest, interest lost on cash and fees, amortisation of acquired intangibles.' },
+          { title: 'Financing grid', text: '66 mixes on a 10% grid, each checked for cash and leverage at the 90th-percentile price, with breakeven synergies solved exactly.' },
+          { title: 'Value', text: 'a value-driver DCF (growth paid for with reinvestment), synergies discounted at WACC + 2 points, NPV against the full price, and the walk-away premium solved in closed form.' },
+          { title: 'Memo', text: 'a generated decision memo whose wording comes from the inputs and results, plus four charts.' },
+        ]} />
+        <p className='opacity-80'>Python 3.12, NumPy and pandas for the simulation, matplotlib for the charts; 66 tests check the arithmetic against hand calculations and closed forms.</p>
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Deal Setup</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <div className='grid grid-cols-2 gap-3 text-center'>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>18.0×</div><div className='text-[11px] opacity-70'>Acquirer P/E</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>15.0×</div><div className='text-[11px] opacity-70'>Target P/E (pre-premium)</div></div>
-              </div>
-              <p className='mt-3 opacity-90'>The target trades cheaper than the acquirer, the classic setup where a deal <em>should</em> be accretive on paper, but a large enough premium or too much stock financing can still erase that edge. That tension is exactly what the simulation is measuring.</p>
-            </CardContent>
-          </Card>
+      <Block title='Limitations'>
+        <Bullets items={[
+          'A screen, not a full valuation: one WACC, a value-driver DCF, no balance sheet. The answer depends most on the synergy assumptions and discount rates, which live in deal.json so they can be argued about.',
+          'No credit analysis beyond the leverage cap, and no view on whether the acquirer’s own stock is fairly priced, which changes how expensive paying in shares really is.',
+          'The probabilities describe the assumed ranges, not the real world, and the inputs are drawn independently (in practice a high premium and strong target growth go together).',
+        ]} />
+      </Block>
 
-          <Card>
-            <CardHeader><CardTitle>Monte Carlo Simulation</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{SIM_CODE}</code></pre>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Results (20,000 trials)</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-3 text-center'>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>77.5%</div><div className='text-[11px] opacity-70'>P(Accretive)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>+1.9%</div><div className='text-[11px] opacity-70'>Median EPS impact</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>-2.1%</div><div className='text-[11px] opacity-70'>5th percentile (downside)</div></div>
-                <div className='rounded-lg p-3 bg-neutral-100 dark:bg-neutral-800/50'><div className='text-lg font-bold'>+6.4%</div><div className='text-[11px] opacity-70'>95th percentile (upside)</div></div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Distribution of EPS Accretion / Dilution</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <AccretionHistogram />
-              <p className='opacity-90'>Roughly one simulated outcome in four lands dilutive. The deal "works" in most scenarios, but not comfortably enough to wave off the downside tail.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Sensitivity (standardized regression coefficients)</CardTitle></CardHeader>
-            <CardContent className='text-sm space-y-2'>
-              <TornadoChart />
-              <p className='opacity-90'>The financing mix (how much is paid in cash versus stock) moves accretion more than the premium negotiated or the synergies promised. That's the actionable takeaway for a deal team: fighting for a lower price helps, but the financing structure is the bigger lever.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Repo Structure</CardTitle></CardHeader>
-            <CardContent className='text-sm'>
-              <pre className='overflow-x-auto text-xs md:text-sm'><code>{`mna/\n├─ data/ (illustrative deal assumptions)\n├─ mna/\n│  ├─ __init__.py\n│  ├─ simulate.py\n│  ├─ sensitivity.py\n│  └─ charts.py\n├─ notebooks/\n└─ cli.py   # mna simulate --trials 20000 --seed 11`}</code></pre>
-            </CardContent>
-          </Card>
-        </div>
-
-        <ProjectPager slug='mna' />
-      </div>
-      </main>
-    </div>
+      <CodeNote tests={66} extras={['a generated decision memo']} />
+    </CaseStudyPage>
   )
 }
