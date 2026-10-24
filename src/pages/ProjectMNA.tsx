@@ -1,6 +1,6 @@
 import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-const IMG = '/projects/mna/'
+const IMG = '/media/mna/'
 
 export default function Page() {
   return (
@@ -27,7 +27,7 @@ export default function Page() {
       </Block>
 
       <Block title='Accretion isn’t value'>
-        <Figure src={IMG + 'value_vs_eps.png'} alt='Year-3 EPS accretion against NPV for each simulated draw' caption='Share of simulations that are accretive (years 2 and 3) or create value, by premium paid. Accretion survives far higher premiums than value does.' />
+        <Figure src={IMG + 'value_vs_eps.webp'} alt='Line chart of the share of simulations that are EPS-accretive in year 3, accretive in year 2, or create value (NPV above zero), by premium paid from 0% to 60% over the target’s market value, for the 20% cash / 40% debt / 40% stock mix. Year-3 accretion stays near 100% up to about a 35% premium and is still 53% at 60%; year-2 accretion falls from 85% at a 20% premium to 22% at the expected 38%; value creation falls from 98% with no premium to 47% at the 20% walk-away premium and under 1% at 38%.' caption='Share of simulations that are accretive (years 2 and 3) or create value, by premium paid. Accretion survives far higher premiums than value does.' />
         <p>The target’s standalone DCF is $498M of enterprise value, 4% under its market value, so the screen doesn’t find value by assuming the market is wrong. At median inputs, adding synergies ($139M of present value) and subtracting integration costs ($13M) and fees ($10M) makes it worth $614M to us, against $701M paid (equity plus the debt taken on): <b>NPV −$87M</b>. Across the simulations the median NPV is −$93M, positive in only 5%.</p>
         <p><b>Walk-away premium: 20%</b> at median inputs, 27% if synergies come in at their 90th percentile, 31% if they’re discounted at the WACC instead of WACC + 2 points. Synergies are assumed to keep growing after year 3 with no reinvestment; charging them the same reinvestment as the target’s own DCF cuts the walk-away premium to 15%.</p>
       </Block>
@@ -38,14 +38,14 @@ export default function Page() {
       </Block>
 
       <Block title='Financing: which mixes fit, and what they do'>
-        <Figure src={IMG + 'financing_heatmap.png'} alt='Heatmap of year-2 accretion probability by cash, debt and stock share, with infeasible mixes marked' />
+        <Figure src={IMG + 'financing_heatmap.webp'} alt='Heatmap of year-2 accretion probability by cash, debt and stock share, with infeasible mixes marked' />
         <p>Each of 66 financing mixes is evaluated against the <i>same</i> 20,000 draws, so differences between structures are the structure, not noise. Tested at a cautious price (the 90th-percentile premium) with fees paid from cash, <b>24 of 66</b> fit the cash and 3.0× leverage limits. The best, 20% cash / 60% debt / 20% stock, has a <b>42%</b> chance of year-2 accretion (the proposed 20/40/40: 27%) and breaks even with $15.9M of run-rate synergies instead of $18.6M. The memo is explicit that this is an accounting effect that adds risk.</p>
       </Block>
 
       <Block title='What moves the answer'>
         <div className='grid grid-cols-1 gap-3'>
-          <Figure src={IMG + 'eps_by_year.png'} alt='Distribution of EPS accretion in years 1, 2 and 3' caption='Year 1 dilutes in every draw; synergies phase in by year 3.' />
-          <Figure src={IMG + 'tornado.png'} alt='Tornado chart of year-2 EPS sensitivity' caption='10th to 90th percentile of each input, the others at their medians.' />
+          <Figure src={IMG + 'eps_by_year.webp'} alt='Distribution of EPS accretion in years 1, 2 and 3' caption='Year 1 dilutes in every draw; synergies phase in by year 3.' />
+          <Figure src={IMG + 'tornado.webp'} alt='Tornado chart of year-2 EPS sensitivity' caption='10th to 90th percentile of each input, the others at their medians.' />
         </div>
         <p>The premium matters most: moving it from its 10th to 90th percentile swings year-2 EPS by 4.2 points, more than synergy delivery or target growth (3.0 each) or interest rates (2.3). Each scenario below changes one thing and reuses the base draws (year 2):</p>
         <DataTable head={['Scenario', 'P(accretive)', 'Median', '5th pct']} highlight={0} rows={[
@@ -61,8 +61,8 @@ export default function Page() {
       <Block title='How it works'>
         <Steps items={[
           { title: 'Inputs', text: 'deal.json holds the two companies, the financing limits and triangular ranges for every uncertain input; synergies are skewed below plan, because most deals under-deliver.' },
-          { title: 'Simulation', text: '20,000 draws of premium, synergy realisation, integration overrun, debt rate and target growth, shared by every financing mix.' },
-          { title: 'EPS bridge', text: 'pro forma EPS for years 1–3: new shares at an issue discount, after-tax interest, interest lost on cash and fees, amortisation of acquired intangibles.' },
+          { title: 'Simulation', text: '20,000 draws of premium, synergy realization, integration overrun, debt rate and target growth, shared by every financing mix.' },
+          { title: 'EPS bridge', text: 'pro forma EPS for years 1–3: new shares at an issue discount, after-tax interest, interest lost on cash and fees, amortization of acquired intangibles.' },
           { title: 'Financing grid', text: '66 mixes on a 10% grid, each checked for cash and leverage at the 90th-percentile price, with breakeven synergies solved exactly.' },
           { title: 'Value', text: 'a value-driver DCF (growth paid for with reinvestment), synergies discounted at WACC + 2 points, NPV against the full price, and the walk-away premium solved in closed form.' },
           { title: 'Memo', text: 'a generated decision memo whose wording comes from the inputs and results, plus four charts.' },

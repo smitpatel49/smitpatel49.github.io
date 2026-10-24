@@ -1,12 +1,16 @@
-import React, { createContext, useContext } from 'react'
+import React, { createContext, useContext, useEffect, useRef } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { Lock, ExternalLink } from 'lucide-react'
 import { ProjectBreadcrumb, ProjectPager } from './ProjectNav'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import AmbientBackground from './AmbientBackground'
+import { PageHeader, SiteFooter, SkipLink, PAGE_SHELL } from './SiteChrome'
+import NotFound from '../pages/NotFound'
 import { useHeadMeta } from '../hooks/useHeadMeta'
-import { projects } from '../data/projects'
+import { projects, type ProjectMeta } from '../data/projects'
 import { EMAIL } from '../data/site'
+import imageSizes from '../data/imageSizes.json'
 
 /**
  * Shared building blocks for the eight case-study pages, so every page has the same
@@ -18,17 +22,22 @@ const ProjectContext = createContext<string>('')
 
 export function CaseStudyPage({ slug, lede, children }: { slug: string; lede: string; children: React.ReactNode }) {
   const meta = projects.find(p => p.slug === slug)
-  if (!meta) throw new Error(`unknown project slug: ${slug}`)
-  useHeadMeta({ title: meta.title, description: meta.summary, path: '/projects/' + slug })
+  if (!meta) return <NotFound/>
+  return <CaseStudyLayout meta={meta} lede={lede}>{children}</CaseStudyLayout>
+}
+
+function CaseStudyLayout({ meta, lede, children }: { meta: ProjectMeta; lede: string; children: React.ReactNode }) {
+  useHeadMeta({ title: meta.title, description: meta.summary, path: '/projects/' + meta.slug, type: 'article' })
   return (
-    <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-      <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
+    <div className={PAGE_SHELL}>
+      <SkipLink/>
       <AmbientBackground/>
+      <PageHeader/>
       <ProjectContext.Provider value={meta.title}>
       <main id='main-content'>
         <div className='section'>
           <div className='section-stripe'></div>
-          <ProjectBreadcrumb slug={slug} />
+          <ProjectBreadcrumb slug={meta.slug} />
           <h1 className='section-title'>{meta.title}</h1>
           <p className='text-center opacity-80 max-w-2xl mx-auto'>{lede}</p>
           <div className='flex gap-2 flex-wrap justify-center mt-4'>
@@ -37,10 +46,11 @@ export function CaseStudyPage({ slug, lede, children }: { slug: string; lede: st
           <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
             {children}
           </div>
-          <ProjectPager slug={slug} />
+          <ProjectPager slug={meta.slug} />
         </div>
       </main>
       </ProjectContext.Provider>
+      <SiteFooter/>
     </div>
   )
 }
@@ -49,7 +59,7 @@ export function CaseStudyPage({ slug, lede, children }: { slug: string; lede: st
 export function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card>
-      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
+      <CardHeader><CardTitle as='h2'>{title}</CardTitle></CardHeader>
       <CardContent className='text-sm leading-relaxed space-y-3'>{children}</CardContent>
     </Card>
   )
@@ -70,11 +80,50 @@ export function Stats({ items }: { items: { value: string; label: string }[] }) 
   )
 }
 
-/** A result figure from the project's results/ folder, copied into public/projects/<slug>/. */
+const SIZES: Record<string, number[]> = imageSizes
+
+/**
+ * A result figure from the project's results/ folder, copied into public/media/<slug>/
+ * as WebP. Width and height come from src/data/imageSizes.json (npm run images:sizes), so
+ * the browser reserves the right space before the image loads.
+ */
 export function Figure({ src, alt, caption, maxWidth }: { src: string; alt: string; caption?: string; maxWidth?: number }) {
+  const size = SIZES[src]
   return (
     <figure className='space-y-2'>
-      <img src={src} alt={alt} loading='lazy' style={maxWidth ? { maxWidth } : undefined} className='w-full h-auto mx-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white' />
+      <img src={src} alt={alt} loading='lazy' decoding='async' width={size?.[0]} height={size?.[1]} style={maxWidth ? { maxWidth } : undefined} className='w-full h-auto mx-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white' />
+      {caption && <figcaption className='text-xs opacity-70 text-center'>{caption}</figcaption>}
+    </figure>
+  )
+}
+
+/**
+ * A short looping clip (a replacement for an animated GIF): WebM with an MP4 fallback and
+ * a poster from the first frame. It plays muted and looped; when the visitor prefers
+ * reduced motion it doesn’t autoplay and starts paused on the poster. Native controls are
+ * always shown so the clip can be paused.
+ */
+export function Video({ base, label, caption, maxWidth }: { base: string; label: string; caption?: string; maxWidth?: number }) {
+  const reduce = useReducedMotion()
+  const ref = useRef<HTMLVideoElement>(null)
+  const poster = base + '_poster.jpg'
+  const size = SIZES[poster]
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+    if (reduce) v.pause()
+    else v.play().catch(() => { /* autoplay refused: the controls are there */ })
+  }, [reduce])
+  return (
+    <figure className='space-y-2'>
+      <video ref={ref} aria-label={label} poster={poster} width={size?.[0]} height={size?.[1]}
+        autoPlay={!reduce} muted loop playsInline controls preload={reduce ? 'metadata' : 'auto'}
+        style={maxWidth ? { maxWidth } : undefined}
+        className='block w-full h-auto mx-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white'>
+        <source src={base + '.webm'} type='video/webm' />
+        <source src={base + '.mp4'} type='video/mp4' />
+        <a href={base + '.mp4'}>Download the clip (MP4)</a>
+      </video>
       {caption && <figcaption className='text-xs opacity-70 text-center'>{caption}</figcaption>}
     </figure>
   )
@@ -124,7 +173,7 @@ export function DashboardLink({ href, label, note }: { href: string; label: stri
   return (
     <a href={href} target='_blank' rel='noopener' className='flex items-start gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors'>
       <ExternalLink className='w-4 h-4 mt-0.5 shrink-0 opacity-70' aria-hidden='true' />
-      <span><span className='font-medium underline'>{label}</span><span className='block text-xs opacity-70'>{note}</span></span>
+      <span><span className='font-medium underline'>{label}</span><span className='sr-only'> (opens in a new tab)</span><span className='block text-xs opacity-70'>{note}</span></span>
     </a>
   )
 }
@@ -137,10 +186,10 @@ export function CodeNote({ tests, extras }: { tests: number; extras: string[] })
   const subject = encodeURIComponent('Code request: ' + useContext(ProjectContext))
   return (
     <Card>
-      <CardHeader><CardTitle className='flex items-center justify-center gap-2'><Lock className='w-4 h-4' aria-hidden='true' /> Code</CardTitle></CardHeader>
+      <CardHeader><CardTitle as='h2' className='flex items-center justify-center gap-2'><Lock className='w-4 h-4' aria-hidden='true' /> Code</CardTitle></CardHeader>
       <CardContent className='text-sm leading-relaxed space-y-3'>
         <p className='opacity-90'>The repository is private. It contains the full pipeline, {tests} automated tests with a CI workflow that lints and tests every push, a README with setup and usage, a code reference, and an executed walkthrough notebook{extras.length ? ', plus ' + extras.join(', ') : ''}.</p>
-        <p><a className='underline' href={`mailto:${EMAIL}?subject=${subject}`}>Email me for access</a> <span className='opacity-70'>and I'll share it.</span></p>
+        <p><a className='underline' href={`mailto:${EMAIL}?subject=${subject}`}>Email me for access</a> <span className='opacity-70'>and I’ll share it.</span></p>
       </CardContent>
     </Card>
   )

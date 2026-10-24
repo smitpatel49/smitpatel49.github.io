@@ -1,6 +1,6 @@
 import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-const IMG = '/projects/stock/'
+const IMG = '/media/stock/'
 
 export default function Page() {
   return (
@@ -27,12 +27,14 @@ export default function Page() {
       </Block>
 
       <Block title='Next quarter: hold or reduce?'>
-        <Figure src={IMG + 'method_comparison.png'} alt='Horizontal bar chart of 63-day VaR95 and CVaR95 for seven simulations, with a dashed line at the −12% risk budget. The independent bootstrap has the mildest tail (VaR95 about −10.8%); the regime-aware simulations sit around −12%; starting stressed reaches about −17% VaR95 and −22% CVaR95; the true process, drawn hatched, is at about −13.3% VaR95 and −18.7% CVaR95.' caption='63-day VaR95 and CVaR95 (the average beyond VaR) by simulation method, on the synthetic history. The hatched bars are the true process; the dashed line is the −12% risk budget.' />
-        <DataTable head={['Next quarter, from today', 'Median', 'VaR95', 'CVaR95', 'Hold?']} highlight={4} rows={[
+        <Figure src={IMG + 'method_comparison.webp'} alt='Horizontal bar chart of 63-day VaR95 and CVaR95 for the six simulation methods and the true process, with a dashed line at the −12% risk budget. The independent bootstrap has the mildest tail (VaR95 about −10.8%); the regime-aware simulations sit around −12%; starting stressed reaches about −17% VaR95 and −22% CVaR95; the true process, drawn hatched, is at about −13.3% VaR95 and −18.7% CVaR95.' caption='63-day VaR95 and CVaR95 (the average beyond VaR) by simulation method, on the synthetic history. The hatched bars are the true process; the dashed line is the −12% risk budget.' />
+        <DataTable head={['Next quarter', 'Median', 'VaR95', 'CVaR95', 'Hold?']} highlight={6} rows={[
           ['Bootstrap, days drawn independently', '+3.3%', '−10.8%', '−14.2%', 'yes'],
           ['Block bootstrap (10-day blocks)', '+3.7%', '−11.8%', '−15.8%', 'yes'],
-          ['Regime-aware (resampled days)', '+4.3%', '−12.0%', '−17.1%', 'yes, by 0.04 pts'],
+          ['Regime-aware (resampled days), from today’s state', '+4.3%', '−12.0%', '−17.1%', 'yes, by 0.04 pts'],
           ['Fitted HMM simulated directly', '+4.4%', '−11.8%', '−16.8%', 'yes'],
+          ['Regime-aware, if starting calm', '+4.5%', '−11.8%', '−16.9%', 'yes'],
+          ['Regime-aware, if starting stressed', '+1.5%', '−17.1%', '−22.3%', 'no'],
           ['True process, from today’s true state', '+2.4%', '−13.3%', '−18.7%', 'no'],
         ]} />
         <p>Bootstraps shuffle past days (or 10-day chunks), which breaks stressed spells into pieces, so the simulated quarter almost never contains the long run of bad days that produces a −15% quarter. The regime-aware simulation keeps that structure: it simulates which regime each future day is in, starting from today’s estimated state, then draws that day’s return from past days weighted by the model’s probability that they were in that regime.</p>
@@ -43,11 +45,11 @@ export default function Page() {
           ['Regime-aware (resampled days)', '+0.4 pts', '3.3 pts', '+0.6 pts'],
           ['Fitted HMM simulated directly', '+0.1 pts', '3.1 pts', '+0.1 pts'],
         ]} />
-        <p>The bootstraps are biased towards optimism, most of all beyond VaR; the regime methods are close to unbiased. But for every method the error from having only six years of history (about 3 points of VaR95) is bigger than the differences between methods, so a VaR this close to the budget should be read as “near the limit”, not as a pass.</p>
+        <p>The bootstraps are biased toward optimism, most of all beyond VaR; the regime methods are close to unbiased. But for every method the error from having only six years of history (about 3 points of VaR95) is bigger than the differences between methods, so a VaR this close to the budget should be read as “near the limit”, not as a pass.</p>
       </Block>
 
       <Block title='The regime model'>
-        <Figure src={IMG + 'regimes.png'} alt='Two panels for the synthetic history, 2020 to 2025. Top: the synthetic price with shaded spans where the model says the market is stressed. Bottom: the smoothed probability of the stressed regime, which rises to near 1 over grey bands marking the days the generator was actually stressed.' caption='Synthetic history. Top: simulated price with the spans the model labels stressed. Bottom: smoothed probability of the stressed regime against the generator’s true stressed days (grey).' />
+        <Figure src={IMG + 'regimes.webp'} alt='Two panels for the synthetic history, 2020 to 2025. Top: the synthetic price with shaded spans where the model says the market is stressed. Bottom: the smoothed probability of the stressed regime, which rises to near 1 over gray bands marking the days the generator was actually stressed.' caption='Synthetic history. Top: simulated price with the spans the model labels stressed. Bottom: smoothed probability of the stressed regime against the generator’s true stressed days (gray).' />
         <DataTable head={['Parameters', 'Calm vol', 'Stressed vol', 'Stay calm', 'Stay stressed']} rows={[
           ['True', '0.80%', '2.20%', '0.985', '0.94'],
           ['Estimated', '0.81%', '2.11%', '0.982', '0.89'],
@@ -56,7 +58,7 @@ export default function Page() {
       </Block>
 
       <Block title='Backtesting 1-day VaR'>
-        <Figure src={IMG + 'var_backtest.png'} alt='Synthetic history, last 500 days: grey bars of daily returns with four 1-day 95% VaR lines (historical, EWMA, GARCH and regime HMM) below them, and dots marking the days the regime VaR was breached.' caption='Synthetic history, last 500 days: 1-day 95% VaR from each method against the next day’s return (grey bars), with breaches of the regime VaR marked.' />
+        <Figure src={IMG + 'var_backtest.webp'} alt='Synthetic history, last 500 days: gray bars of daily returns with four 1-day 95% VaR lines (historical, EWMA, GARCH and regime HMM) below them, and dots marking the days the regime VaR was breached.' caption='Synthetic history, last 500 days: 1-day 95% VaR from each method against the next day’s return (gray bars), with breaches of the regime VaR marked.' />
         <p>A 95% VaR should be breached on about 5% of days (Kupiec test), and a breach today shouldn’t make one tomorrow more likely (Christoffersen independence test). Over the last 1,250 synthetic days:</p>
         <DataTable head={['Method', 'Breach rate', 'Kupiec p', 'Breach after breach', 'Independence p']} rows={[
           ['Historical, 250-day window', '5.4%', '0.48', '16%', '0.00'],
@@ -64,11 +66,11 @@ export default function Page() {
           ['GARCH(1,1), Student-t', '5.1%', '0.85', '11%', '0.06'],
           ['Regime HMM', '4.7%', '0.65', '12%', '0.02'],
         ]} />
-        <p>All four get the overall rate right. Historical VaR fails badly on clustering. The regime model is better but still fails at the 5% level: it only recognises a new stressed spell after a few bad days, and those first days are where breaches bunch up. GARCH passes both tests with the smallest average VaR. The regime model is better at “what does the next quarter look like” than “what happens tomorrow”.</p>
+        <p>All four get the overall rate right. Historical VaR fails badly on clustering. The regime model is better but still fails at the 5% level: it only recognizes a new stressed spell after a few bad days, and those first days are where breaches bunch up. GARCH passes both tests with the smallest average VaR. The regime model is better at “what does the next quarter look like” than “what happens tomorrow”.</p>
       </Block>
 
       <Block title='Real data: the S&P 500'>
-        <Figure src={IMG + 'sp500_regimes.png'} alt='Two panels for the S&P 500, late 2016 to 2026. Top: 21-day realised volatility in percent a year, with shaded stressed spans in early 2018, late 2018, 2019, 2020 (where volatility spikes to about 95%), late 2021 to early 2023, 2024 and April 2025 (about 50%). Bottom: the smoothed probability of the stressed regime.' caption='S&P 500: 21-day realised volatility (annualised) with the spans the model labels stressed, and the smoothed stressed-regime probability. No index levels are shown.' />
+        <Figure src={IMG + 'sp500_regimes.webp'} alt='Two panels for the S&P 500, late 2016 to 2026. Top: 21-day realized volatility in percent a year, with shaded stressed spans in early 2018, late 2018, 2019, 2020 (where volatility spikes to about 95%), late 2021 to early 2023, 2024 and April 2025 (about 50%). Bottom: the smoothed probability of the stressed regime.' caption='S&P 500: 21-day realized volatility (annualized) with the spans the model labels stressed, and the smoothed stressed-regime probability. No index levels are shown.' />
         <p>Calm days have 0.66% daily volatility and stressed days 1.71%. Both regimes are very persistent (0.990 and 0.977 chance of staying), so stressed spells last about 44 trading days on average. The market is calm today (2% chance of a stressed day tomorrow), so every method says hold: regime-aware median +5.6%, VaR95 −10.3%. Started from a stressed market, the same simulation gives median +0.8% and VaR95 −19.3%, so a rule like this should be re-run when the regime changes, not once a quarter.</p>
         <DataTable head={['1-day VaR, 2,263 days', 'Breach rate', 'Kupiec p', 'Breach after breach', 'Independence p']} highlight={1} rows={[
           ['Historical, 250-day window', '5.5%', '0.30', '17%', '0.00'],
@@ -81,7 +83,7 @@ export default function Page() {
 
       <Block title='What broke along the way'>
         <Bullets items={[
-          <><b>Gaussian states.</b> My first version read every big move in a calm market as a one-day trip into the stressed state, and estimated stressed spells of about 3 days instead of the true ~17. Student-t states fixed it: stressed persistence went from 0.67 to 0.89 (true 0.94) and labelling accuracy from 91% to 95%.</>,
+          <><b>Gaussian states.</b> My first version read every big move in a calm market as a one-day trip into the stressed state, and estimated stressed spells of about 3 days instead of the true ~17. Student-t states fixed it: stressed persistence went from 0.67 to 0.89 (true 0.94) and labeling accuracy from 91% to 95%.</>,
           <><b>Most-likely labels.</b> Giving each past day only to its most likely regime inflated the simulated volatility by 13–61% in five of six test samples with no regimes at all, and left the stressed pool empty in the sixth. Weighting days by regime probability fixed it, and there are tests for it.</>,
           <><b>GARCH on the real index.</b> Breaching 7.8% of days looked like a bug, but its forecasts match the arch package’s exactly. A fat-tailed t has a thinner 5% quantile than a normal (−1.57σ against −1.64σ), and the fitted mean nudges VaR up; a skewed-t is the next thing to try.</>,
         ]} />
@@ -91,7 +93,7 @@ export default function Page() {
         <Steps items={[
           { title: 'History', text: 'a synthetic two-regime history with a known future, FRED’s S&P 500 file, or your own price CSV, with at least 500 daily returns.' },
           { title: 'Regimes', text: 'a two-state Student-t HMM fitted by EM, a forward filter for today’s state with no look-ahead, and a smoother for the resampling weights.' },
-          { title: 'Next quarter', text: 'six simulation methods over 63 trading days, each summarised as median, VaR95, CVaR95 and drawdown, with a Monte Carlo interval on VaR and the hold-or-reduce call.' },
+          { title: 'Next quarter', text: 'six simulation methods over 63 trading days, each summarized as median, VaR95, CVaR95 and drawdown, with a Monte Carlo interval on VaR and the hold-or-reduce call.' },
           { title: 'Backtest', text: 'rolling 1-day VaR from four methods, refitted on an expanding window, scored with Kupiec and Christoffersen tests.' },
           { title: 'Method study', text: 'the simulation methods on 40 synthetic histories, each scored against the true process.' },
         ]} />

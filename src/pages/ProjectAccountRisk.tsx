@@ -1,6 +1,6 @@
 import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, DashboardLink, CodeNote } from '../components/CaseStudy'
 
-const IMG = '/projects/account-risk/'
+const IMG = '/media/account-risk/'
 
 export default function Page() {
   return (
@@ -25,7 +25,7 @@ export default function Page() {
           { value: '21%', label: 'Caught by random flagging at the same volume' },
           { value: '+19 to +51', label: 'Points more churned ARR caught (95% interval)' },
         ]} />
-        <p>The improvement is certain, but its size isn’t: with 70 churners every percentage is loose, and 14 days was picked by looking at this same history.</p>
+        <p>The improvement is clear, but its size isn’t: with 70 churners every percentage is loose, and 14 days was picked by looking at this same history.</p>
       </Block>
 
       <Block title='Backtest of the proposed change'>
@@ -42,7 +42,7 @@ export default function Page() {
           'With only 70 churners every percentage is loose. Resampling the renewals 2,000 times gives 4–27% for the current rule and 31–65% for the proposed one.',
           '14 days was chosen on this same history, so 48% is an in-sample number. It’s one threshold moved, not a search over hundreds of combinations, but the real test is the next two quarters of renewals.',
         ]} />
-        <Figure src={IMG + 'rule_tradeoff.png'} alt='Scatter of churned ARR caught against share of renewing accounts flagged for 288 rule variants, with the current rule, proposed rule and logistic score highlighted and a dashed line for random flagging' caption='Share of renewing accounts flagged against share of churned ARR caught, July–December 2025 renewals. Grey dots are the 288 rule variants tried; the current rule sits at 6% flagged and 14% caught, the proposed rule at 21% and 48%, and the logistic score at 21% and 46%. The dashed diagonal is flagging at random.' />
+        <Figure src={IMG + 'rule_tradeoff.webp'} alt='Scatter of churned ARR caught against share of renewing accounts flagged for 288 rule variants, with the current rule, proposed rule and logistic score highlighted and a dashed line for random flagging' caption='Share of renewing accounts flagged against share of churned ARR caught, July–December 2025 renewals. Gray dots are the 288 rule variants tried; the current rule sits at 6% flagged and 14% caught, the proposed rule at 21% and 48%, and the logistic score at 21% and 46%. The dashed diagonal is flagging at random.' />
       </Block>
 
       <Block title='The book today'>
@@ -53,7 +53,7 @@ export default function Page() {
           ['Enterprise', 94, 8, '8.5%', '$721,100'],
         ]} />
         <p>The extract carries the problems real exports do: 14 missing activity dates, 4 missing renewal dates, 6 unknown champion statuses, 3 impossible CSAT scores, 2 negative ARR values and 3 duplicate activity rows. The checks find all of them.</p>
-        <Figure src={IMG + 'dashboard_preview.png'} alt='Screenshot of the account health dashboard: KPI tiles, the proposed-change callout, risk by tier, warning signs and the start of the renewal schedule' caption='The top of the dashboard: KPI tiles, the CR-01 callout, risk by tier (count and ARR), the warning signs behind each flag, and the start of the renewal schedule.' />
+        <Figure src={IMG + 'dashboard_preview.webp'} alt='Screenshot of the account health dashboard: KPI tiles, the proposed-change callout, risk by tier, warning signs and the start of the renewal schedule' caption='The top of the dashboard: KPI tiles, the CR-01 callout, risk by tier (count and ARR), the warning signs behind each flag, and the start of the renewal schedule.' />
         <DashboardLink href='/dashboards/account-health.html' label='Open the account health dashboard' note='One offline file from the committed run: KPIs, risk by tier, renewal schedule, the worklist with filters and the data-review list, with a toggle to see which accounts the proposed rule would add.' />
       </Block>
 
@@ -73,7 +73,7 @@ export default function Page() {
         <Bullets items={[
           <><b>The best-looking variant was overfitting.</b> Held to the 14-day rule’s volume, the best of 288 variants caught 50% of churned ARR. Repeating the search 50 times on a random half of the renewals and scoring the winner on the other half: 54% where it was picked, 41% where it wasn’t. The 14-day rule averaged 46% on the same held-out halves and did at least as well in 88% of splits.</>,
           <><b>A logistic health score did no better.</b> Cross-validated on the same signals it catches 46% at the same volume, against 48%, well within the noise of 70 churners, and it’s much harder to explain.</>,
-          <><b>But the model found what the rule misses.</b> Seat utilisation is the strongest churn signal, and the rule doesn’t use it at all. That became the next change request, CR-02, once Product and CS agree what an “active seat” is.</>,
+          <><b>But the model found what the rule misses.</b> Seat utilization is the strongest churn signal, and the rule doesn’t use it at all. That became the next change request, CR-02, once Product and CS agree what an “active seat” is.</>,
         ]} />
       </Block>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Retention &amp; funnel review</title>
+<title>Retention &amp; funnel review: synthetic store</title>
 <style>
   :root {
     color-scheme: light;
@@ -55,11 +55,18 @@
   select { font: inherit; padding: 3px 6px; background: var(--surface); color: var(--ink);
            border: 1px solid var(--border); border-radius: 6px; }
   @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .kpi .value { font-size: 21px; } }
+  /* Link back to the portfolio case study (added for the hosted copy). */
+  .back-bar { background: var(--surface); border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .back-bar div { max-width: 1120px; margin: 0 auto; padding: 10px 16px; }
+  .back-bar a { color: var(--ink-2); text-decoration: none; }
+  .back-bar a:hover, .back-bar a:focus-visible { color: var(--ink); text-decoration: underline; }
+  @media print { .back-bar { display: none; } }
 </style>
 </head>
 <body>
+<nav class="back-bar" aria-label="Portfolio"><div><a href="/projects/analytics"><span aria-hidden="true">← </span>Back to the case study</a></div></nav>
 <main>
-  <h1 id="title">Retention &amp; funnel review</h1>
+  <h1 id="title">Retention &amp; funnel review: synthetic store</h1>
   <p class="sub">Synthetic online store · 2024-01 to 2025-12 · charts plot the SQL reports in <code>sql/</code>; KPIs, intervals and the checkout difference-in-differences are computed from them in Python</p>
 
   <div class="kpis" id="kpis"></div>

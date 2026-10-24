@@ -28,13 +28,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm ci
 
+      # Type-checks, builds, then prerenders dist/projects/<slug>.html, 404.html and sitemap.xml.
       - name: Build
-        run: npx vite build
-
-      - name: Add SPA fallback (404.html)
-        run: cp dist/index.html dist/404.html
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

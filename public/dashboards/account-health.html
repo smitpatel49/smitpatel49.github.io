@@ -55,9 +55,16 @@
   svg text { fill: var(--muted); font-size: 12px; }
   @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .kpi .value { font-size: 20px; }
     th, td { padding: 6px 5px; } #tiers td.barcell, #tiers th:last-child { display: none; } }
+  /* Link back to the portfolio case study (added for the hosted copy). */
+  .back-bar { background: var(--surface); border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .back-bar div { max-width: 1160px; margin: 0 auto; padding: 10px 16px; }
+  .back-bar a { color: var(--ink-2); text-decoration: none; }
+  .back-bar a:hover, .back-bar a:focus-visible { color: var(--ink); text-decoration: underline; }
+  @media print { .back-bar { display: none; } }
 </style>
 </head>
 <body>
+<nav class="back-bar" aria-label="Portfolio"><div><a href="/projects/account-risk"><span aria-hidden="true">← </span>Back to the case study</a></div></nav>
 <main>
   <h1>Account health &amp; renewal risk</h1>
   <p class="sub" id="sub"></p>

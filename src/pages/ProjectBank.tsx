@@ -1,6 +1,6 @@
 import { CaseStudyPage, Block, Stats, Figure, DataTable, Steps, Bullets, CodeNote } from '../components/CaseStudy'
 
-const IMG = '/projects/bank/'
+const IMG = '/media/bank/'
 
 export default function Page() {
   return (
@@ -35,17 +35,17 @@ export default function Page() {
           ['XGBoost', '0.723', '0.267', '26.7%'],
         ]} />
         <p>The differences are small. The paired bootstrap interval for “logistic regression minus XGBoost” at capacity is 0.0 to +4.7 points, and the intervals against the other two include zero. The point isn’t that logistic regression is better; it’s that the complex models don’t earn their extra cost here.</p>
-        <Figure src={IMG + 'reliability.png'} alt='Reliability plot: observed subscription rate against mean predicted probability for each decile of the test set, with a dashed diagonal for perfect calibration. The points follow the diagonal from about 0.03 to 0.31, with small wobbles in the lower deciles.' caption='Observed subscription rate against mean predicted probability, by decile of the test set. The dashed line is perfect calibration.' />
+        <Figure src={IMG + 'reliability.webp'} alt='Reliability plot: observed subscription rate against mean predicted probability for each decile of the test set, with a dashed diagonal for perfect calibration. The points follow the diagonal from about 0.03 to 0.31, with small wobbles in the lower deciles.' caption='Observed subscription rate against mean predicted probability, by decile of the test set. The dashed line is perfect calibration.' />
         <p>The probabilities feed an expected-value calculation (p × $150 − $10 per call), so they need to mean what they say. Sigmoid and isotonic calibration were compared by cross-validated Brier score and neither improved on the raw model by a meaningful margin, so no calibration step was added. Test Brier score: 0.079; mean prediction 9.8% against a 9.7% base rate.</p>
       </Block>
 
       <Block title='What drives the ranking'>
-        <Figure src={IMG + 'feature_importance.png'} alt='Horizontal bar chart of permutation importance on the test set. Previous campaign outcome is far ahead at about 0.12 drop in average precision; job, housing loan, contact type and contacts this campaign follow at about 0.016–0.023; balance, days since previous contact, education and personal loan are smaller; age is about zero.' caption='Permutation importance on the test set: the drop in average precision when each input is shuffled.' />
+        <Figure src={IMG + 'feature_importance.webp'} alt='Horizontal bar chart of permutation importance on the test set. Previous campaign outcome is far ahead at about 0.12 drop in average precision; job, housing loan, contact type and contacts this campaign follow at about 0.016–0.023; balance, days since previous contact, education and personal loan are smaller; age is about zero.' caption='Permutation importance on the test set: the drop in average precision when each input is shuffled.' />
         <p>A successful previous campaign matters far more than anything else: shuffling it costs 0.12 of average precision. Job, an existing housing loan and contact channel follow, at about 0.02 each. If I were advising the bank, the cheapest improvement isn’t a fancier model, it’s logging previous-campaign outcomes more carefully.</p>
       </Block>
 
       <Block title='Capacity is the constraint'>
-        <Figure src={IMG + 'profit_curve.png'} alt='Profit curve: campaign profit in thousands of dollars against the share of customers called in model order. Profit rises steeply to about $11.9k at the 15% capacity line, keeps rising to a peak of about $15.8k at 52% of the list, then falls to about $10.8k when everyone is called.' caption='Test-set campaign profit at $150 per sale and $10 per call, calling customers in model order. The dashed line is the 15% call capacity.' />
+        <Figure src={IMG + 'profit_curve.webp'} alt='Profit curve: campaign profit in thousands of dollars against the share of customers called in model order. Profit rises steeply to about $11.9k at the 15% capacity line, keeps rising to a peak of about $15.8k at 52% of the list, then falls to about $10.8k when everyone is called.' caption='Test-set campaign profit at $150 per sale and $10 per call, calling customers in model order. The dashed line is the 15% call capacity.' />
         <p>Profit keeps rising until about 52% of the list has been called. At 15% capacity the campaign makes about $11.9k on this test slice, against a peak of $15.8k. That gives the business a number to weigh against hiring or outsourcing more calls; the margin and cost are assumptions, and real figures drop straight into the same code.</p>
       </Block>
 
@@ -57,8 +57,8 @@ export default function Page() {
           ['Random forest (selected by CV)', '0.760', '0.391', '37.4%'],
           ['XGBoost', '0.764', '0.396', '37.0%'],
         ]} />
-        <Figure src={IMG + 'uci_roc_pr_curves.png'} alt='Two panels for the UCI test set: ROC curves and precision-recall curves for logistic regression, logistic splines, random forest and XGBoost. The four curves nearly overlap; in the precision-recall panel, random forest and XGBoost sit slightly above logistic regression between about 20% and 60% recall, all well above the base-rate line.' caption='UCI test set: ROC (left) and precision–recall (right) for the four candidates. The dashed line on the right is the base rate, i.e. random calling.' />
-        <p>The paired interval for “random forest minus logistic regression” at capacity is +1.6 to +4.4 points; random forest and XGBoost are tied (−0.5 to +1.5). The synthetic response model is mostly additive and real behaviour has interactions, which is a useful reminder of what synthetic data can and can’t tell you. Previous-campaign outcome is again the strongest signal by far.</p>
+        <Figure src={IMG + 'uci_roc_pr_curves.webp'} alt='Two panels for the UCI test set: ROC curves and precision-recall curves for logistic regression, logistic splines, random forest and XGBoost. The four curves nearly overlap; in the precision-recall panel, random forest and XGBoost sit slightly above logistic regression between about 20% and 60% recall, all well above the base-rate line.' caption='UCI test set: ROC (left) and precision–recall (right) for the four candidates. The dashed line on the right is the base rate, i.e. random calling.' />
+        <p>The paired interval for “random forest minus logistic regression” at capacity is +1.6 to +4.4 points; random forest and XGBoost are tied (−0.5 to +1.5). The synthetic response model is mostly additive and real behavior has interactions, which is a useful reminder of what synthetic data can and can’t tell you. Previous-campaign outcome is again the strongest signal by far.</p>
       </Block>
 
       <Block title='Lessons'>
@@ -69,7 +69,7 @@ export default function Page() {
       <Block title='How it works'>
         <Steps items={[
           { title: 'Data', text: '12,000 synthetic customers from a known response model, or the UCI calls mapped onto the same columns, using only pre-call information.' },
-          { title: 'Split', text: '80% development, 20% test, stratified, made once before any modelling.' },
+          { title: 'Split', text: '80% development, 20% test, stratified, made once before any modeling.' },
           { title: 'Selection', text: 'four pipelines compared by 5-fold CV on precision in the top 15%, then calibration chosen by CV Brier score.' },
           { title: 'Evaluation', text: 'the test set scored once: precision, recall and lift at capacity with bootstrap intervals, paired intervals between models, reliability, permutation importance and a profit curve.' },
           { title: 'Serving', text: 'the saved model behind a batch scoring CLI and a FastAPI service with /score and /rank, which refuse invalid batches and flag category values never seen in training.' },
@@ -82,7 +82,7 @@ export default function Page() {
           'The main results are on synthetic data. The UCI data is one bank, 2008–2010, with a base rate that drifts sharply over time and no customer ID, so the same person can appear on both sides of a split.',
           '“Contacts this campaign” includes the last call, and calling usually stops once a customer says yes, so it isn’t fully known in advance. A production model should count only contacts made before scoring.',
           'Age and job are model inputs; a real deployment would need a fairness and legal review first.',
-          'No drift monitoring yet: I’d track the score distribution and realised hit rate per campaign and retrain when they drift.',
+          'No drift monitoring yet: I’d track the score distribution and realized hit rate per campaign and retrain when they drift.',
           'The profit numbers use assumed economics ($150 per sale, $10 per call).',
         ]} />
       </Block>

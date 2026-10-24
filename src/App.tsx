@@ -1,20 +1,15 @@
-
-import React, { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Routes, Route, Link } from 'react-router-dom'
-import { Button } from './components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { Badge } from './components/ui/badge'
-import { Mail, Github, Linkedin, ArrowRight, Cpu, LineChart, Boxes, Users, Sun, Moon, Menu, X } from 'lucide-react'
-import ProjectMNA from './pages/ProjectMNA'
-import ProjectBank from './pages/ProjectBank'
-import ProjectStock from './pages/ProjectStock'
-import ProjectADAS from './pages/ProjectADAS'
-import ProjectAnalytics from './pages/ProjectAnalytics'
-import ProjectForecast from './pages/ProjectForecast'
-import ProjectNLP from './pages/ProjectNLP'
-import ProjectAccountRisk from './pages/ProjectAccountRisk'
+import { Mail, Github, Linkedin, ArrowRight, Cpu, LineChart, Boxes, Users, Menu, X } from 'lucide-react'
 import AmbientBackground from './components/AmbientBackground'
+import ScrollManager from './components/ScrollManager'
+import ThemeToggle from './components/ThemeToggle'
+import { HeaderBar, HeaderIconLinks, PageHeader, SiteFooter, SkipLink, PAGE_SHELL } from './components/SiteChrome'
+import NotFound from './pages/NotFound'
+import { caseStudyPages } from './pages/caseStudies'
 import { projects } from './data/projects'
 import { useHeadMeta } from './hooks/useHeadMeta'
 import { EMAIL, GITHUB, LINKEDIN } from './data/site'
@@ -44,7 +39,7 @@ const focusAreas = [
 
 const education = [
   { school: 'DePaul University', location: 'Chicago, IL',
-    degree: "Master's in Data Science (Concentration in Computational Methods)", gpa: 'GPA: 3.7/4.0',
+    degree: 'Master’s in Data Science (Concentration in Computational Methods)', gpa: 'GPA: 3.7/4.0',
     bullets: [
       'Graduate President Scholar, $6,000 scholarship.',
       'Member of the Upsilon Pi Epsilon Honor Society and the Golden Key International Honor Society.',
@@ -57,13 +52,28 @@ const education = [
     ] },
 ]
 
-const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>(
-  <section id={id} className={'section' + (className ? ' ' + className : '')}>
-    <div className='section-stripe'></div>
-    <motion.h2 initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.5}} transition={{duration:0.5}} className='section-title'>{title}</motion.h2>
-    {children}
-  </section>
-)
+/**
+ * Fade-and-rise as an element scrolls into view. With reduced motion it renders in its
+ * final state (initial={false}), and print CSS forces `.reveal` visible, so content is
+ * never left invisible if the in-view animation doesn't fire.
+ */
+function useReveal(amount: number) {
+  const reduce = useReducedMotion()
+  return reduce
+    ? { initial: false as const }
+    : { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount }, transition: { duration: 0.5 } }
+}
+
+const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>{
+  const reveal = useReveal(0.5)
+  return (
+    <section id={id} className={'section' + (className ? ' ' + className : '')}>
+      <div className='section-stripe'></div>
+      <motion.h2 {...reveal} className='section-title reveal'>{title}</motion.h2>
+      {children}
+    </section>
+  )
+}
 
 const Pill=({children}:{children:React.ReactNode})=>(<span className='text-xs md:text-sm rounded-full border px-3 py-1 bg-white/60 dark:bg-white/5 backdrop-blur'>{children}</span>)
 
@@ -107,98 +117,102 @@ const ContactForm = () => {
   )
 }
 
-const ThemeToggle = () => {
-  const getInitial = () => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') return true;
-    if (saved === 'light') return false;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  };
-  const [dark, setDark] = useState(getInitial());
+const NAV_LINKS: [id: string, to: string, label: string][] = [
+  ['home', '/', 'Home'],
+  ['about', '/#about', 'About'],
+  ['playground', '/#playground', 'Playground'],
+  ['experience', '/#experience', 'Experience'],
+  ['projects', '/#projects', 'Projects'],
+  ['skills', '/#skills', 'Skills'],
+  ['education', '/#education', 'Education'],
+  ['contact', '/#contact', 'Contact'],
+]
 
-  useEffect(() => {
-    const r = document.documentElement;
-    if (dark) {
-      r.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      (document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null)?.setAttribute('content','#0a0a0a');
-    } else {
-      r.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      (document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null)?.setAttribute('content','#ffffff');
+/**
+ * Full-screen menu below the xl breakpoint: a modal dialog that closes on Escape, keeps
+ * Tab inside itself, focuses Close on open and returns focus to the trigger on close.
+ */
+const MobileMenu = ({open,onClose,triggerRef}:{open:boolean;onClose:()=>void;triggerRef:React.RefObject<HTMLButtonElement>}) => {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(()=>{
+    if(!open) return
+    document.body.classList.add('overflow-hidden')
+    closeRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); return }
+      if (e.key !== 'Tab' || !panelRef.current) return
+      const items = [...panelRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')]
+      if (!items.length) return
+      const first = items[0], last = items[items.length - 1]
+      const inside = panelRef.current.contains(document.activeElement)
+      if (e.shiftKey && (document.activeElement === first || !inside)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus() }
     }
-  }, [dark]);
-
-  return (
-    <Button variant='ghost' size='icon' aria-label='Toggle theme' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10' onClick={() => setDark(!dark)}>
-      {dark ? <Sun className='w-6 h-6' strokeWidth={2.2}/> : <Moon className='w-6 h-6' strokeWidth={2.2}/>}
-    </Button>
-  );
-};
-
-
-
-
-
-const MobileMenu = ({open,onClose}:{open:boolean;onClose:()=>void}) => {
-  React.useEffect(()=>{
-    if(open){ document.body.classList.add('overflow-hidden') }
-    return ()=>{ document.body.classList.remove('overflow-hidden') }
+    document.addEventListener('keydown', onKey)
+    const trigger = triggerRef.current
+    return ()=>{
+      document.body.classList.remove('overflow-hidden')
+      document.removeEventListener('keydown', onKey)
+      trigger?.focus({ preventScroll: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[open])
 
-  if(!open) return <></>
-
+  const item = 'px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+  const card = 'flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'
   return (
-    <div className='fixed inset-0 z-[100] xl:hidden'>
-      <motion.div
-        className='absolute inset-0 bg-black/50'
-        initial={{opacity:0}}
-        animate={{opacity:1}}
-        exit={{opacity:0}}
-        onClick={onClose}
-      />
-      <motion.div
-        className='fixed top-0 left-0 h-screen w-screen bg-white dark:bg-neutral-900 p-5 overflow-y-auto flex flex-col'
-        initial={{x:-320}}
-        animate={{x:0}}
-        exit={{x:-320}}
-        transition={{type:'tween',duration:0.25}}
-      >
-        <div className='flex items-center justify-between mb-4'>
-          <div className='font-semibold text-base'>Menu</div>
-          <button onClick={onClose} aria-label='Close menu' className='rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
-            <X className='w-6 h-6' aria-hidden='true'/>
-          </button>
+    <AnimatePresence>
+      {open && (
+        <div key='mobile-menu' id='mobile-menu' role='dialog' aria-modal='true' aria-labelledby='mobile-menu-title' className='fixed inset-0 z-[100] xl:hidden'>
+          <motion.div
+            className='absolute inset-0 bg-black/50'
+            initial={{opacity:0}}
+            animate={{opacity:1}}
+            exit={{opacity:0}}
+            transition={{duration:0.2}}
+            onClick={onClose}
+          />
+          <motion.div
+            ref={panelRef}
+            className='fixed top-0 left-0 h-screen w-screen bg-white dark:bg-neutral-900 p-5 overflow-y-auto flex flex-col'
+            initial={{x:-320, opacity:0}}
+            animate={{x:0, opacity:1}}
+            exit={{x:-320, opacity:0}}
+            transition={{type:'tween',duration:0.25}}
+          >
+            <div className='flex items-center justify-between mb-4'>
+              <h2 id='mobile-menu-title' className='font-semibold text-base'>Menu</h2>
+              <button ref={closeRef} type='button' onClick={onClose} aria-label='Close menu' className='rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
+                <X className='w-6 h-6' aria-hidden='true'/>
+              </button>
+            </div>
+            <nav aria-label='Sections' className='grid text-base rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800'>
+              {NAV_LINKS.map(([id,to,label],i)=>(
+                <Link key={id} to={to} onClick={onClose} className={item + (i===0 ? ' bg-white/60 dark:bg-neutral-900/60' : '')}>{label}</Link>
+              ))}
+            </nav>
+            <div className='mt-6 flex flex-col gap-2'>
+              <a href={'mailto:'+EMAIL} onClick={onClose} className={card}>
+                <Mail className='w-5 h-5' aria-hidden='true'/><span>Email</span>
+              </a>
+              <a href={GITHUB} target='_blank' rel='noreferrer' onClick={onClose} className={card}>
+                <Github className='w-5 h-5' aria-hidden='true'/><span>GitHub</span><span className='sr-only'> (opens in a new tab)</span>
+              </a>
+              <a href={LINKEDIN} target='_blank' rel='noreferrer' onClick={onClose} className={card}>
+                <Linkedin className='w-5 h-5' aria-hidden='true'/><span>LinkedIn</span><span className='sr-only'> (opens in a new tab)</span>
+              </a>
+            </div>
+          </motion.div>
         </div>
-        <nav className='grid text-base rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800'>
-          <a href='/' onClick={onClose} className='px-4 py-3 bg-white/60 dark:bg-neutral-900/60 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Home</a>
-          <a href='/#about' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>About</a>
-          <a href='/#playground' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Playground</a>
-          <a href='/#case-studies' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Experience</a>
-          <a href='/#projects' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Projects</a>
-          <a href='/#skills' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Skills</a>
-          <a href='/#education' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Education</a>
-          <a href='/#contact' onClick={onClose} className='px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>Contact</a>
-        </nav>
-        <div className='mt-6 flex flex-col gap-2'>
-          <a href={'mailto:'+EMAIL} onClick={onClose} className='flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>
-            <Mail className='w-5 h-5'/><span>Email</span>
-          </a>
-          <a href={GITHUB} target='_blank' rel='noreferrer' onClick={onClose} className='flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>
-            <Github className='w-5 h-5'/><span>GitHub</span>
-          </a>
-          <a href={LINKEDIN} target='_blank' rel='noreferrer' onClick={onClose} className='flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800'>
-            <Linkedin className='w-5 h-5'/><span>LinkedIn</span>
-          </a>
-        </div>
-      </motion.div>
-    </div>
+      )}
+    </AnimatePresence>
   )
 }
 
 
-const NAV_IDS = ['home','about','playground','case-studies','projects','skills','education','contact']
+const NAV_IDS = NAV_LINKS.map(([id])=>id)
 
 function useActiveSection(ids:string[]){
   const [active,setActive] = useState(ids[0])
@@ -219,43 +233,40 @@ function useActiveSection(ids:string[]){
 
 const Header=()=>{
   const [open,setOpen]=useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const active = useActiveSection(NAV_IDS)
   const navCls = (id:string) => 'opacity-80 hover:opacity-100 transition-colors' + (active===id ? ' !opacity-100 text-accent-600 dark:text-accent-400 font-medium' : '')
   return (
-    <div className='sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/40 dark:bg-neutral-900/60 border-b'>
+    <HeaderBar>
       <div className='container-narrow h-14 grid grid-cols-[auto,1fr,auto] items-center gap-3'>
-        <button onClick={()=>setOpen(true)} aria-label='Open menu' className='xl:hidden rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
+        <button ref={triggerRef} type='button' onClick={()=>setOpen(true)} aria-label='Open menu' aria-expanded={open} aria-controls='mobile-menu' aria-haspopup='dialog' className='xl:hidden rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
           <Menu className='w-6 h-6' aria-hidden='true'/>
         </button>
-        <nav className='hidden xl:flex justify-center gap-5 text-sm whitespace-nowrap'>
-          <a href='/' className={navCls('home')}>Home</a>
-          <a href='/#about' className={navCls('about')}>About</a>
-          <a href='/#playground' className={navCls('playground')}>Playground</a>
-          <a href='/#case-studies' className={navCls('case-studies')}>Experience</a>
-          <a href='/#projects' className={navCls('projects')}>Projects</a>
-          <a href='/#skills' className={navCls('skills')}>Skills</a>
-          <a href='/#education' className={navCls('education')}>Education</a>
-          <a href='/#contact' className={navCls('contact')}>Contact</a>
+        <nav aria-label='Sections' className='hidden xl:flex justify-center gap-5 text-sm whitespace-nowrap'>
+          {NAV_LINKS.map(([id,to,label])=>(
+            <Link key={id} to={to} className={navCls(id)} aria-current={active===id ? 'location' : undefined}>{label}</Link>
+          ))}
         </nav>
         <div className='justify-self-end flex items-center gap-2'>
           <ThemeToggle/>
-          <a href={'mailto:'+EMAIL} aria-label='Email Smit Patel'><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Mail className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
-          <a href={GITHUB} target='_blank' rel='noreferrer' aria-label="Smit Patel's GitHub (opens in a new tab)"><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Github className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
-          <a href={LINKEDIN} target='_blank' rel='noreferrer' aria-label="Smit Patel's LinkedIn (opens in a new tab)"><Button variant='ghost' size='icon' className='ring-1 ring-neutral-200 dark:ring-neutral-800 hover:ring-accent-400/60 w-10 h-10'><Linkedin className='w-6 h-6' strokeWidth={2.1} aria-hidden='true'/></Button></a>
+          <HeaderIconLinks/>
         </div>
-        <MobileMenu open={open} onClose={()=>setOpen(false)} />
+        <MobileMenu open={open} onClose={()=>setOpen(false)} triggerRef={triggerRef} />
       </div>
-    </div>
+    </HeaderBar>
   )
 }
 
 const Hero=()=>(
   <section id='home' className='container-narrow pt-12 pb-6 relative text-center'>
-    <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className='flex flex-col gap-6'>
+    <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className='reveal flex flex-col gap-6'>
       <div className='flex items-center justify-center'>
         <div>
-          <h1 className='text-4xl md:text-5xl font-semibold tracking-tight bg-gradient-to-r from-accent-600 to-accent-500 bg-clip-text text-transparent'>Smit Patel</h1>
-          <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>{TITLE} · {LOCATION}</p>
+          <h1 className='hero-name text-4xl md:text-5xl font-semibold tracking-tight bg-gradient-to-r from-accent-600 to-accent-500 bg-clip-text text-transparent'>Smit Patel</h1>
+          {/* Title and location wrap as whole units: stacked on phones, one line with a separator from sm up. */}
+          <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>
+            <span className='block sm:inline'>{TITLE}</span><span className='sr-only'>, </span><span className='hidden sm:inline' aria-hidden='true'> · </span><span className='block sm:inline'>{LOCATION}</span>
+          </p>
         </div>
       </div>
       <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I turn ambiguous business problems into decisions and systems, using data analysis, statistical modeling, and production ML. I work the full arc: scoping the business question, exploring and analyzing the data, building the model or dashboard, and shipping it into something people actually use.</p>
@@ -264,11 +275,27 @@ const Hero=()=>(
   </section>
 )
 
+const ProjectCard=({p}:{p:typeof projects[number]})=>{
+  const reveal = useReveal(0.3)
+  return (
+    <motion.div {...reveal} className='reveal'>
+      <Card className='hover:shadow-md transition-shadow h-full flex flex-col'>
+        <CardHeader><CardTitle as='h3' className='flex items-center gap-2'><span className='inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl bg-accent-500/10 text-accent-600 dark:text-accent-400'><p.icon className='w-4 h-4' aria-hidden='true'/></span><span>{p.title}</span></CardTitle></CardHeader>
+        <CardContent className='text-sm space-y-4 text-left flex-1 flex flex-col'>
+          <p className='opacity-90'>{p.summary}</p>
+          <div className='flex gap-2 flex-wrap'>{p.tech.map((t,j)=>(<Badge key={j} variant='outline'>{t}</Badge>))}</div>
+          <div className='mt-auto pt-1'><Link to={'/projects/'+p.slug} className='inline-flex items-center gap-2 underline'>Read full case study<span className='sr-only'>: {p.title}</span> <ArrowRight className='w-4 h-4' aria-hidden='true'/></Link></div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
 const Home=()=>{
   useHeadMeta()
   return (
-  <div className='relative z-0 min-h-screen bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100'>
-    <a href='#main-content' className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-accent-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg'>Skip to main content</a>
+  <div className={PAGE_SHELL}>
+    <SkipLink/>
     <AmbientBackground/>
     <Header/>
     <main id='main-content'>
@@ -278,17 +305,17 @@ const Home=()=>{
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 gap-6 text-sm leading-relaxed'>
           <div className='space-y-4 text-center'>
-            <p>I like problems that don't come pre-labeled: the real first step is usually figuring out what's actually being asked, before reaching for a model or a dashboard. That's shaped a career that moves between business and data analysis, statistical modeling, and production ML, depending on what the problem actually needs. I've worked that way across consulting, research, and independent projects, in forecasting, risk, NLP, and computer vision.</p>
+            <p>I like problems that don’t come pre-labeled: the real first step is usually figuring out what’s actually being asked, before reaching for a model or a dashboard. That’s shaped a career that moves between business and data analysis, statistical modeling, and production ML, depending on what the problem actually needs. I’ve worked that way across consulting, research, and independent projects, in forecasting, risk, NLP, and computer vision.</p>
             <p>My toolkit runs from Python and SQL, through modern MLOps (Docker, MLflow, SageMaker), to the reporting layer stakeholders actually read: Power BI, Excel, plain language. I care less about which single label fits me, and more about whether the answer is trustworthy and someone can act on it.</p>
           </div>
           <div>
             <Card>
-              <CardHeader><CardTitle className='text-base'>Quick Facts</CardTitle></CardHeader>
+              <CardHeader><CardTitle as='h3' className='text-base'>Quick Facts</CardTitle></CardHeader>
               <CardContent className='text-sm space-y-2'>
-                <div className='flex items-center gap-2'><Boxes className='w-4 h-4 shrink-0'/> Comfortable owning a project end to end: framing the question, building the model or dashboard, and shipping something people actually use</div>
-                <div className='flex items-center gap-2'><LineChart className='w-4 h-4 shrink-0'/> Domains I've worked across: forecasting and simulation, computer vision, NLP, and decision systems</div>
-                <div className='flex items-center gap-2'><Cpu className='w-4 h-4 shrink-0'/> Also fluent in the less glamorous half of the job: CI/CD, containerized deployment, monitoring, and alerting</div>
-                <div className='flex items-center gap-2'><Users className='w-4 h-4 shrink-0'/> Often the bridge between a vague business ask and the KPI, analysis, or dashboard that actually answers it</div>
+                <div className='flex items-center gap-2'><Boxes className='w-4 h-4 shrink-0' aria-hidden='true'/> Comfortable owning a project end to end: framing the question, building the model or dashboard, and shipping something people actually use</div>
+                <div className='flex items-center gap-2'><LineChart className='w-4 h-4 shrink-0' aria-hidden='true'/> Domains I’ve worked across: forecasting and simulation, computer vision, NLP, and decision systems</div>
+                <div className='flex items-center gap-2'><Cpu className='w-4 h-4 shrink-0' aria-hidden='true'/> Also fluent in the less glamorous half of the job: CI/CD, containerized deployment, monitoring, and alerting</div>
+                <div className='flex items-center gap-2'><Users className='w-4 h-4 shrink-0' aria-hidden='true'/> Often the bridge between a vague business ask and the KPI, analysis, or dashboard that actually answers it</div>
               </CardContent>
             </Card>
           </div>
@@ -301,19 +328,19 @@ const Home=()=>{
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
       <div className='grid grid-cols-1 gap-4'>
         <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle>Churn Scoring Simulator</CardTitle></CardHeader>
+          <CardHeader><CardTitle as='h3'>Churn Scoring Simulator</CardTitle></CardHeader>
           <CardContent className='text-sm space-y-3'>
             <ChurnDemo />
           </CardContent>
         </Card>
         <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle>Quick NER Demo</CardTitle></CardHeader>
+          <CardHeader><CardTitle as='h3'>Quick NER Demo</CardTitle></CardHeader>
           <CardContent className='text-sm space-y-3'>
             <NerDemo />
           </CardContent>
         </Card>
         <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle>Mini SQL Playground</CardTitle></CardHeader>
+          <CardHeader><CardTitle as='h3'>Mini SQL Playground</CardTitle></CardHeader>
           <CardContent className='text-sm space-y-3'>
             <SqlDemo />
           </CardContent>
@@ -323,7 +350,7 @@ const Home=()=>{
           </div>
       </Section>
 
-    <Section id='case-studies' title='Experience' className='section-bg'>
+    <Section id='experience' title='Experience' className='section-bg'>
         <div className='max-w-5xl mx-auto px-4 sm:px-6'>
           <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level. Think of it as a complement to my resume, not a repeat of it.</p>
           <div className='grid grid-cols-1 gap-5'>
@@ -346,19 +373,7 @@ const Home=()=>{
     <Section id='projects' title='Selected Projects' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch'>
-          {projects.map((p,i) => (
-            <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{duration:0.5}}
-              className={(i===projects.length-1 && projects.length%2===1) ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''}>
-              <Card className='hover:shadow-md transition-shadow h-full flex flex-col'>
-                <CardHeader><CardTitle className='flex items-center gap-2'><span className='inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl bg-accent-500/10 text-accent-600 dark:text-accent-400'><p.icon className='w-4 h-4' aria-hidden='true'/></span><span>{p.title}</span></CardTitle></CardHeader>
-                <CardContent className='text-sm space-y-4 text-left flex-1 flex flex-col'>
-                  <p className='opacity-90'>{p.summary}</p>
-                  <div className='flex gap-2 flex-wrap'>{p.tech.map((t,j)=>(<Badge key={j} variant='outline'>{t}</Badge>))}</div>
-                  <div className='mt-auto pt-1'><Link to={'/projects/'+p.slug} className='inline-flex items-center gap-2 underline'>Read full case study <ArrowRight className='w-4 h-4'/></Link></div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+          {projects.map(p => <ProjectCard key={p.slug} p={p}/>)}
         </div>
       
           </div>
@@ -409,9 +424,9 @@ const Home=()=>{
           <ContactForm/>
         </div>
         <div className='w-full flex flex-col items-center gap-3'>
-          <a className='inline-flex items-center gap-2 underline' href={'mailto:'+EMAIL}><Mail className='w-5 h-5'/> {EMAIL}</a>
-          <a className='inline-flex items-center gap-2 underline' href={GITHUB} target='_blank' rel='noreferrer'><Github className='w-5 h-5'/> GitHub</a>
-          <a className='inline-flex items-center gap-2 underline' href={LINKEDIN} target='_blank' rel='noreferrer'><Linkedin className='w-5 h-5'/> LinkedIn</a>
+          <a className='inline-flex items-center gap-2 underline' href={'mailto:'+EMAIL}><Mail className='w-5 h-5' aria-hidden='true'/> {EMAIL}</a>
+          <a className='inline-flex items-center gap-2 underline' href={GITHUB} target='_blank' rel='noreferrer'><Github className='w-5 h-5' aria-hidden='true'/> GitHub<span className='sr-only'> (opens in a new tab)</span></a>
+          <a className='inline-flex items-center gap-2 underline' href={LINKEDIN} target='_blank' rel='noreferrer'><Linkedin className='w-5 h-5' aria-hidden='true'/> LinkedIn<span className='sr-only'> (opens in a new tab)</span></a>
         </div>
       </div>
     
@@ -419,12 +434,23 @@ const Home=()=>{
       </Section>
     </main>
 
-    <footer className='container-narrow pb-16 text-xs opacity-60 text-center'>© {new Date().getFullYear()} Smit Patel</footer>
+    <SiteFooter/>
   </div>
   )
 }
 
 function sigmoid(x:number){ return 1/(1+Math.exp(-x)) }
+
+const Slider=({id,label,value,min,max,onChange}:{id:string;label:string;value:number;min:number;max:number;onChange:(v:number)=>void})=>(
+  <div className='space-y-1'>
+    <div className='flex items-baseline justify-between gap-3'>
+      <label htmlFor={id} className='text-xs'>{label}</label>
+      <output htmlFor={id} className='text-xs font-medium tabular-nums'>{value}</output>
+    </div>
+    <input id={id} className='w-full' type='range' min={min} max={max} value={value} onChange={(e)=>onChange(Number(e.target.value))}/>
+  </div>
+)
+
 function ChurnDemo(){
   const [tenure,setTenure]=useState(6)
   const [monthly,setMonthly]=useState(60)
@@ -433,17 +459,14 @@ function ChurnDemo(){
   const pct = Math.round(score*100)
   return (
     <div>
-      <div className='grid grid-cols-1 gap-3 items-center'>
-        <label className='text-xs'>Tenure (months)</label>
-        <input className='w-full' type='range' min={1} max={24} value={tenure} onChange={(e)=>setTenure(Number(e.target.value))}/>
-        <label className='text-xs'>Monthly Spend ($)</label>
-        <input className='w-full' type='range' min={10} max={200} value={monthly} onChange={(e)=>setMonthly(Number(e.target.value))}/>
-        <label className='text-xs'>Support Tickets (30d)</label>
-        <input className='w-full' type='range' min={0} max={10} value={tickets} onChange={(e)=>setTickets(Number(e.target.value))}/>
+      <div className='grid grid-cols-1 gap-3'>
+        <Slider id='churn-tenure' label='Tenure (months)' value={tenure} min={1} max={24} onChange={setTenure}/>
+        <Slider id='churn-spend' label='Monthly Spend ($)' value={monthly} min={10} max={200} onChange={setMonthly}/>
+        <Slider id='churn-tickets' label='Support Tickets (30d)' value={tickets} min={0} max={10} onChange={setTickets}/>
       </div>
-      <div className='mt-4 text-sm'>Churn Probability: <span className='font-medium'>{pct}%</span></div>
-      <div className='h-2 rounded bg-neutral-200 dark:bg-neutral-800 mt-2'><div className='h-2 rounded bg-neutral-900 dark:bg-neutral-100' style={{ width: String(pct) + '%' }} /></div>
-      <div className='mt-3 text-xs opacity-70'>*A toy scoring formula to show the idea; it isn't one of the projects below.</div>
+      <div className='mt-4 text-sm' aria-live='polite'>Churn Probability: <span className='font-medium'>{pct}%</span></div>
+      <div className='h-2 rounded bg-neutral-200 dark:bg-neutral-800 mt-2' aria-hidden='true'><div className='h-2 rounded bg-neutral-900 dark:bg-neutral-100' style={{ width: String(pct) + '%' }} /></div>
+      <div className='mt-3 text-xs opacity-70'>*A toy scoring formula to show the idea; it isn’t one of the projects below.</div>
     </div>
   )
 }
@@ -457,56 +480,109 @@ const ORDERS_TABLE: SqlRow[] = [
   { id:5, customer:'Olivia', region:'East',  amount:300, status:'shipped' },
   { id:6, customer:'Ethan',  region:'West',  amount:90,  status:'pending' },
 ]
+const ORDERS_COLUMNS = Object.keys(ORDERS_TABLE[0])
+// Lower-cased name -> real column, so identifiers are case-insensitive and only real
+// columns resolve (a plain `in` check would also accept toString, constructor, ...).
+const ORDERS_COLUMN_SET = new Map(ORDERS_COLUMNS.map(c => [c.toLowerCase(), c]))
+const SQL_EXAMPLE = 'SELECT * FROM orders WHERE amount > 100 ORDER BY amount DESC LIMIT 5'
 
-function parseLiteral(raw:string): string | number {
-  const s = raw.trim()
-  const unquoted = /^'(.*)'$/.test(s) ? s.slice(1,-1) : s
-  if (unquoted !== '' && !isNaN(Number(unquoted))) return Number(unquoted)
-  return unquoted
+type SqlResult = { columns:string[]; rows:SqlRow[] } | { error:string }
+
+function resolveColumn(name:string): string | undefined {
+  return ORDERS_COLUMN_SET.get(name.toLowerCase())
+}
+function unknownColumn(name:string, where:string){
+  return { error: `Unknown column “${name}” in ${where}. Columns: ${ORDERS_COLUMNS.join(', ')}.` }
 }
 function compareOp(a:string|number, b:string|number, op:string){
   switch(op){
-    case '=': return a==b; case '!=': return a!=b
-    case '>': return a>b; case '<': return a<b
-    case '>=': return a>=b; case '<=': return a<=b
+    case '=': return a===b
+    case '!=': case '<>': return a!==b
+    case '>': return a>b
+    case '<': return a<b
+    case '>=': return a>=b
+    case '<=': return a<=b
     default: return false
   }
 }
-function runMiniSQL(query:string, table:SqlRow[]): { columns:string[]; rows:SqlRow[] } | { error:string } {
-  const m = query.trim().match(/^SELECT\s+(.+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?(?:\s+ORDER\s+BY\s+(\w+)(\s+ASC|\s+DESC)?)?(?:\s+LIMIT\s+(\d+))?\s*;?\s*$/i)
-  if(!m) return { error: 'Unsupported query. Try: SELECT * FROM orders WHERE amount > 100 ORDER BY amount DESC LIMIT 5' }
-  const [, colsRaw, tableName, whereRaw, orderCol, orderDirRaw, limitRaw] = m
-  if(tableName.toLowerCase() !== 'orders') return { error: `Unknown table "${tableName}". Try: orders` }
+
+/** A deliberately small SQL subset: SELECT cols FROM orders [WHERE col op value] [ORDER BY col [ASC|DESC]] [LIMIT n]. */
+function runMiniSQL(query:string, table:SqlRow[]): SqlResult {
+  const q = query.trim().replace(/;\s*$/, '').trim()
+  if (!q) return { error: `Type a query, for example: ${SQL_EXAMPLE}` }
+  if (!/^SELECT\b/i.test(q)) return { error: `Only SELECT queries are supported. Try: ${SQL_EXAMPLE}` }
+  const m = q.match(/^SELECT\s+([\s\S]+?)\s+FROM\s+(\S+)([\s\S]*)$/i)
+  if (!m) return { error: `Expected SELECT <columns> FROM orders. Try: ${SQL_EXAMPLE}` }
+  const [, colsRaw, tableName, restRaw] = m
+  if (tableName.toLowerCase() !== 'orders') return { error: `Unknown table “${tableName}”. The only table is orders.` }
+
+  const unsupported = restRaw.replace(/'(?:[^']|'')*'/g, "''").match(/\b(JOIN|GROUP\s+BY|HAVING|UNION|OFFSET)\b/i)
+  if (unsupported) return { error: `${unsupported[1].toUpperCase().replace(/\s+/, ' ')} isn’t supported here; this mini engine handles WHERE, ORDER BY and LIMIT.` }
+  const rest = restRaw.match(/^(?:\s+WHERE\s+([\s\S]+?))?(?:\s+ORDER\s+BY\s+(\S+?)(?:\s+(ASC|DESC))?)?(?:\s+LIMIT\s+(\S+))?\s*$/i)
+  if (!rest) return { error: `Couldn’t read “${restRaw.trim()}”. After FROM orders, use WHERE, ORDER BY and LIMIT, in that order.` }
+  const [, whereRaw, orderRaw, orderDir, limitRaw] = rest
   let rows = table.slice()
 
-  if(whereRaw){
-    const cm = whereRaw.trim().match(/^(\w+)\s*(>=|<=|!=|=|>|<)\s*(.+?)\s*$/)
-    if(!cm) return { error: `Could not parse WHERE clause: "${whereRaw}"` }
-    const [, col, op, litRaw] = cm
-    if(!(col in table[0])) return { error: `Unknown column "${col}"` }
-    const lit = parseLiteral(litRaw)
-    rows = rows.filter(r=>{
+  if (whereRaw) {
+    if (/\b(AND|OR)\b/i.test(whereRaw.replace(/'(?:[^']|'')*'/g, "''")))
+      return { error: 'AND and OR aren’t supported: use a single condition, such as amount > 100.' }
+    const cm = whereRaw.trim().match(/^(\w+)\s*(>=|<=|!=|<>|=|>|<)\s*([\s\S]+)$/)
+    if (!cm) return { error: `Couldn’t read the WHERE condition “${whereRaw.trim()}”. Use column, operator, value, such as region = 'West'.` }
+    const [, colRaw, op, litRaw] = cm
+    const col = resolveColumn(colRaw)
+    if (!col) return unknownColumn(colRaw, 'WHERE')
+    const numeric = typeof table[0][col] === 'number'
+    const lit = litRaw.trim()
+    let value: string | number
+    const quoted = lit.match(/^'((?:[^']|'')*)'$/)
+    if (quoted) {
+      const text = quoted[1].replace(/''/g, "'")
+      if (numeric) {
+        if (text.trim() === '' || isNaN(Number(text))) return { error: `${col} is a number column, so compare it with a number, such as ${col} > 100.` }
+        value = Number(text)
+      } else value = text.toLowerCase()
+    } else if (/^-?\d+(\.\d+)?$/.test(lit)) {
+      if (!numeric) return { error: `${col} is a text column, so put the value in single quotes, such as ${col} = 'value'.` }
+      value = Number(lit)
+    } else if (/^\w+$/.test(lit)) {
+      return numeric
+        ? { error: `${col} is a number column, so compare it with a number, such as ${col} > 100.` }
+        : { error: `Text values need single quotes: ${col} ${op} '${lit}'.` }
+    } else {
+      return { error: `Couldn’t read the value “${lit}”. Use a number or text in single quotes.` }
+    }
+    rows = rows.filter(r => {
       const cell = r[col]
-      const a = (typeof cell==='string' && typeof lit==='string') ? cell.toLowerCase() : cell
-      const b = (typeof cell==='string' && typeof lit==='string') ? lit.toLowerCase() : lit
-      return compareOp(a,b,op)
+      return compareOp(typeof cell === 'string' ? cell.toLowerCase() : cell, value, op)
     })
   }
-  if(orderCol){
-    if(!(orderCol in table[0])) return { error: `Unknown column "${orderCol}" in ORDER BY` }
-    const dir = (orderDirRaw||'').trim().toUpperCase()==='DESC' ? -1 : 1
+
+  if (orderRaw) {
+    const col = resolveColumn(orderRaw)
+    if (!col) return unknownColumn(orderRaw, 'ORDER BY')
+    const dir = (orderDir || '').toUpperCase() === 'DESC' ? -1 : 1
     rows = rows.slice().sort((a,b)=>{
-      const av=a[orderCol], bv=b[orderCol]
+      const av=a[col], bv=b[col]
       if(av<bv) return -1*dir; if(av>bv) return 1*dir; return 0
     })
   }
-  if(limitRaw) rows = rows.slice(0, parseInt(limitRaw,10))
+
+  if (limitRaw !== undefined) {
+    if (!/^\d+$/.test(limitRaw)) return { error: `LIMIT needs a whole number, such as LIMIT 5.` }
+    rows = rows.slice(0, parseInt(limitRaw, 10))
+  }
 
   let columns:string[]
-  if(colsRaw.trim()==='*'){ columns = Object.keys(table[0]) }
+  if (colsRaw.trim() === '*') columns = ORDERS_COLUMNS
   else {
-    columns = colsRaw.split(',').map(c=>c.trim())
-    for(const c of columns){ if(!(c in table[0])) return { error: `Unknown column "${c}" in SELECT` } }
+    columns = []
+    for (const raw of colsRaw.split(',').map(c=>c.trim())) {
+      if (raw === '*') return { error: 'Use * on its own, or list column names.' }
+      if (!/^\w+$/.test(raw)) return { error: `Only column names or * can be selected; “${raw}” isn’t supported (no functions, expressions or aliases).` }
+      const col = resolveColumn(raw)
+      if (!col) return unknownColumn(raw, 'SELECT')
+      columns.push(col)
+    }
   }
   const outRows = rows.map(r=>{ const o:SqlRow={}; columns.forEach(c=>o[c]=r[c]); return o })
   return { columns, rows: outRows }
@@ -518,24 +594,27 @@ function SqlDemo(){
   return (
     <div>
       <div className='text-xs opacity-70 mb-2'>Table: <code>orders(id, customer, region, amount, status)</code></div>
-      <textarea className='w-full h-20 p-2 rounded border bg-transparent font-mono text-xs' value={query} onChange={(e)=>setQuery(e.target.value)} spellCheck={false} />
-      {('error' in result) ? (
-        <div className='mt-3 text-xs text-red-500'>{result.error}</div>
-      ) : (
-        <div className='mt-3 overflow-x-auto'>
-          <table className='w-full text-xs border-collapse'>
-            <thead><tr>{result.columns.map(c=>(<th key={c} className='text-left border-b border-neutral-300 dark:border-neutral-700 px-2 py-1 opacity-70'>{c}</th>))}</tr></thead>
-            <tbody>
-              {result.rows.map((r,i)=>(
-                <tr key={i} className='border-b border-neutral-200/50 dark:border-neutral-800/50'>
-                  {result.columns.map(c=>(<td key={c} className='px-2 py-1'>{String(r[c])}</td>))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {result.rows.length===0 && <div className='text-xs opacity-60 mt-1'>No rows matched.</div>}
-        </div>
-      )}
+      <label htmlFor='sql-query' className='sr-only'>SQL query</label>
+      <textarea id='sql-query' className='w-full h-20 p-2 rounded border bg-transparent font-mono text-xs' value={query} onChange={(e)=>setQuery(e.target.value)} spellCheck={false} aria-describedby='sql-result' />
+      <div id='sql-result' aria-live='polite'>
+        {('error' in result) ? (
+          <div className='mt-3 text-xs text-red-600 dark:text-red-400'>{result.error}</div>
+        ) : (
+          <div className='mt-3 overflow-x-auto'>
+            <table className='w-full text-xs border-collapse'>
+              <thead><tr>{result.columns.map((c,i)=>(<th key={c+':'+i} className='text-left border-b border-neutral-300 dark:border-neutral-700 px-2 py-1 opacity-70'>{c}</th>))}</tr></thead>
+              <tbody>
+                {result.rows.map((r,i)=>(
+                  <tr key={i} className='border-b border-neutral-200/50 dark:border-neutral-800/50'>
+                    {result.columns.map((c,j)=>(<td key={c+':'+j} className='px-2 py-1'>{String(r[c])}</td>))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {result.rows.length===0 && <div className='text-xs opacity-60 mt-1'>No rows matched.</div>}
+          </div>
+        )}
+      </div>
       <div className='mt-3 text-xs opacity-70'>*Runs a simplified SQL subset (SELECT/FROM/WHERE/ORDER BY/LIMIT) against an in-memory sample table, for demonstration only, not a full SQL engine.</div>
     </div>
   )
@@ -555,27 +634,38 @@ function NerDemo(){
   const ents = extractNER(text)
   return (
     <div>
-      <textarea className='w-full h-28 p-2 rounded border bg-transparent' value={text} onChange={(e)=>setText(e.target.value)} />
-      <div className='mt-3 text-sm leading-relaxed'>
+      <label htmlFor='ner-text' className='sr-only'>Text to tag</label>
+      <textarea id='ner-text' className='w-full h-28 p-2 rounded border bg-transparent' value={text} onChange={(e)=>setText(e.target.value)} />
+      <div className='mt-3 text-sm leading-relaxed' aria-live='polite'>
         {ents.map((e,i)=>(<span key={i} className='px-1.5 py-0.5 rounded-md border mr-1'>{e.text} <span className='opacity-60 text-xs'>{e.label}</span></span>))}
       </div>
-      <div className='mt-2 text-xs opacity-70'>Rule-based toy example; it isn't one of the projects below.</div>
+      <div className='mt-2 text-xs opacity-70'>Rule-based toy example; it isn’t one of the projects below.</div>
     </div>
   )
 }
 
+/** Light placeholder while a case-study chunk loads. */
+const PageFallback = () => (
+  <div className={PAGE_SHELL}>
+    <PageHeader/>
+    <div className='section text-center text-sm opacity-60' role='status'>Loading…</div>
+  </div>
+)
+
 export default function App(){
   return (
-    <Routes>
-      <Route path='/' element={<Home/>} />
-      <Route path='/projects/analytics' element={<ProjectAnalytics/>} />
-      <Route path='/projects/mna' element={<ProjectMNA/>} />
-      <Route path='/projects/bank' element={<ProjectBank/>} />
-      <Route path='/projects/stock' element={<ProjectStock/>} />
-      <Route path='/projects/adas' element={<ProjectADAS/>} />
-      <Route path='/projects/forecast' element={<ProjectForecast/>} />
-      <Route path='/projects/nlp' element={<ProjectNLP/>} />
-      <Route path='/projects/account-risk' element={<ProjectAccountRisk/>} />
-    </Routes>
+    <>
+      <ScrollManager/>
+      <Suspense fallback={<PageFallback/>}>
+        <Routes>
+          <Route path='/' element={<Home/>} />
+          {projects.map(p => {
+            const Page = caseStudyPages[p.slug]
+            return <Route key={p.slug} path={'/projects/' + p.slug} element={Page ? <Page/> : <NotFound/>} />
+          })}
+          <Route path='*' element={<NotFound/>} />
+        </Routes>
+      </Suspense>
+    </>
   )
 }

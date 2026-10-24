@@ -15,7 +15,10 @@ import React, { useEffect, useRef } from 'react'
 // falls back to the low-density, full-width sprinkle the site always had on
 // phones (no tether there, since it's a touch device anyway) so the motif
 // stays consistent everywhere rather than disappearing on mobile.
-const CONTENT_MAX_WIDTH = 1024 // matches the site's widest content container (max-w-5xl, used in About)
+// Width of the clear band kept free of particles in the middle of the screen. The text column
+// itself is narrower (.section / .container-narrow are max-w-4xl, 896px), so this leaves
+// about 64px of extra clearance on each side of it.
+const CONTENT_MAX_WIDTH = 1024
 const GUTTER_FEATHER = 90 // px of soft fade between the content edge and full tether effect
 const MIN_GUTTER = 40 // px; below this, a side gutter is too narrow to bother placing dots in
 const GUTTER_DENSITY = 8500 // px^2 of gutter area per particle (wide screens)
@@ -57,10 +60,17 @@ export default function AmbientBackground() {
       return pts
     }
 
-    let w = (c.width = window.innerWidth), h = (c.height = window.innerHeight)
+    // Draw in CSS pixels on a backing store scaled by devicePixelRatio, so lines stay crisp.
+    let w = 0, h = 0
+    const size = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      w = window.innerWidth; h = window.innerHeight
+      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr)
+      c.style.width = w + 'px'; c.style.height = h + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    size()
     let pts: P[] = makePts(w, h)
-    const onR = () => { w = (c.width = window.innerWidth); h = (c.height = window.innerHeight); pts = makePts(w, h) }
-    window.addEventListener('resize', onR)
     let mx = -9999, my = -9999
     const onM = (e: MouseEvent) => { mx = e.clientX; my = e.clientY }
     window.addEventListener('mousemove', onM)
@@ -86,20 +96,35 @@ export default function AmbientBackground() {
       if (gutterFactor > 0) { ctx.strokeStyle = `rgba(120,120,120,${0.5 * gutterFactor})`; ctx.beginPath(); ctx.arc(mx, my, 3, 0, Math.PI * 2); ctx.stroke() }
     }
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     let af = 0
-    if (prefersReduced) { draw() } else {
-      const loop = () => {
-        for (const p of pts) {
-          p.x += p.vx; p.y += p.vy
-          if (p.x < p.minX || p.x > p.maxX) p.vx *= -1
-          if (p.y < 0 || p.y > h) p.vy *= -1
-        }
-        draw(); af = requestAnimationFrame(loop)
+    const loop = () => {
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy
+        if (p.x < p.minX || p.x > p.maxX) p.vx *= -1
+        if (p.y < 0 || p.y > h) p.vy *= -1
       }
-      loop()
+      draw(); af = requestAnimationFrame(loop)
     }
-    return () => { cancelAnimationFrame(af); window.removeEventListener('resize', onR); window.removeEventListener('mousemove', onM) }
+    // Animate only while the tab is visible and motion is welcome; otherwise draw one static frame.
+    const start = () => {
+      cancelAnimationFrame(af); af = 0
+      if (document.hidden) return
+      if (reducedQuery.matches) draw()
+      else loop()
+    }
+    const onResize = () => { size(); pts = makePts(w, h); if (!af) draw() }
+    window.addEventListener('resize', onResize)
+    document.addEventListener('visibilitychange', start)
+    reducedQuery.addEventListener('change', start)
+    start()
+    return () => {
+      cancelAnimationFrame(af)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('mousemove', onM)
+      document.removeEventListener('visibilitychange', start)
+      reducedQuery.removeEventListener('change', start)
+    }
   }, [])
 
   const gutterStyle: React.CSSProperties = { width: `max(0px, calc((100vw - ${CONTENT_MAX_WIDTH}px) / 2))` }
