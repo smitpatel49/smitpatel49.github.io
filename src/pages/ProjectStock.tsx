@@ -4,7 +4,18 @@ const IMG = '/media/stock/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='stock' lede='Resampling past returns understates next quarter’s tail risk, because markets switch between calm and stressed regimes that last for weeks. This measures by how much, against a known truth, and then on ten years of the S&P 500.'>
+    <CaseStudyPage slug='stock' lede='Resampling past returns understates next quarter’s tail risk, because markets switch between calm and stressed regimes that last for weeks. This measures by how much, against a known truth, and then on ten years of the S&P 500.'
+      summary={{
+        problem: 'Decide whether to keep holding a stock next quarter under a −12% VaR95 budget, and how far to trust that VaR.',
+        approach: 'A hand-written two-state Student-t HMM drives a regime-aware simulation, checked against bootstraps and the true process; 1-day VaR backtested four ways.',
+        result: 'Over 40 synthetic histories, regime-aware VaR95 is 0.4 points too optimistic on average, against 1.4 points for the plain bootstrap.',
+        decision: 'Hold or reduce next quarter, and when to re-run that call: whenever the market changes regime.',
+        stack: ['Python', 'NumPy', 'SciPy', 'arch', 'matplotlib'],
+        data: {
+          synthetic: '1,500 days with known regimes, plus 40 histories for the method study.',
+          real: 'FRED’s S&P 500 index, 2016–2026 (derived quantities only).',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>A portfolio manager holds a single stock and has agreed a rule in advance: <b>keep it if the median return over the next quarter (63 trading days) beats +3% and the 95% value-at-risk is no worse than −12%</b>. VaR95 is the 5th-percentile return. The rule is simple; the hard part is the distribution it’s applied to, and how far to trust the number.</p>

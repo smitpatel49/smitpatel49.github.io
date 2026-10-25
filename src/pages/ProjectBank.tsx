@@ -4,7 +4,18 @@ const IMG = '/media/bank/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='bank' lede='A call center can reach about 15% of the customer list in a campaign, so the model is judged on one thing: the hit rate in the slice that actually gets called.'>
+    <CaseStudyPage slug='bank' lede='A call center can reach about 15% of the customer list in a campaign, so the model is judged on one thing: the hit rate in the slice that actually gets called.'
+      summary={{
+        problem: 'Rank a bank’s customers for a term-deposit campaign when the calls run out after about 15% of the list.',
+        approach: 'Four models compared by 5-fold cross-validation on precision in the top 15%, a test set scored once with bootstrap intervals, served by a CLI and FastAPI.',
+        result: '3.0× lift in the top 15% (95% CI 2.6–3.4×): a 28.6% hit rate against a 9.7% base rate; 3.2× on the real UCI calls.',
+        decision: 'The weekly call list, and whether extra call capacity is worth paying for.',
+        stack: ['Python', 'scikit-learn', 'XGBoost', 'FastAPI', 'Docker'],
+        data: {
+          synthetic: '12,000 customers drawn from a known response model.',
+          real: 'UCI Bank Marketing, 45,211 calls by a Portuguese bank, 2008–2010.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>A bank runs a term-deposit campaign. The real question isn’t “will this customer subscribe?” but “who goes at the top of the list?” Capacity is fixed, so the people using this are a campaign manager deciding whom to call this week, and whoever decides whether more call capacity would pay for itself.</p>

@@ -14,19 +14,36 @@ import imageSizes from '../data/imageSizes.json'
 
 /**
  * Shared building blocks for the eight case-study pages, so every page has the same
- * structure: overview, headline numbers, results, how it works, lessons, limitations,
- * and a note on the code.
+ * structure: a summary, overview, headline numbers, results, how it works, lessons,
+ * limitations, and a note on the code.
  */
 
 const ProjectContext = createContext<string>('')
 
-export function CaseStudyPage({ slug, lede, children }: { slug: string; lede: string; children: React.ReactNode }) {
-  const meta = projects.find(p => p.slug === slug)
-  if (!meta) return <NotFound/>
-  return <CaseStudyLayout meta={meta} lede={lede}>{children}</CaseStudyLayout>
+/**
+ * The “at a glance” rows at the top of a case study. Plain strings on purpose:
+ * scripts/case-studies.mjs reads them (via each page’s `summary` prop) to build the page’s
+ * Open Graph image and its alt text, so the card and the link preview can’t drift apart.
+ */
+export type SummaryContent = {
+  problem: string
+  approach: string
+  /** The single most important number, with what it’s measured against. */
+  result: string
+  decision: string
+  stack: string[]
+  data: { synthetic: string; real: string }
 }
 
-function CaseStudyLayout({ meta, lede, children }: { meta: ProjectMeta; lede: string; children: React.ReactNode }) {
+type CaseStudyProps = { slug: string; lede: string; summary: SummaryContent; children: React.ReactNode }
+
+export function CaseStudyPage({ slug, ...rest }: CaseStudyProps) {
+  const meta = projects.find(p => p.slug === slug)
+  if (!meta) return <NotFound/>
+  return <CaseStudyLayout meta={meta} {...rest} />
+}
+
+function CaseStudyLayout({ meta, lede, summary, children }: Omit<CaseStudyProps, 'slug'> & { meta: ProjectMeta }) {
   useHeadMeta({ title: meta.title, description: meta.summary, path: '/projects/' + meta.slug, type: 'article' })
   return (
     <div className={PAGE_SHELL}>
@@ -44,6 +61,7 @@ function CaseStudyLayout({ meta, lede, children }: { meta: ProjectMeta; lede: st
             {meta.tech.map(t => <Badge key={t} variant='outline'>{t}</Badge>)}
           </div>
           <div className='grid grid-cols-1 gap-4 mt-8 max-w-3xl mx-auto'>
+            <Summary {...summary} />
             {children}
           </div>
           <ProjectPager slug={meta.slug} />
@@ -52,6 +70,40 @@ function CaseStudyLayout({ meta, lede, children }: { meta: ProjectMeta; lede: st
       </ProjectContext.Provider>
       <SiteFooter/>
     </div>
+  )
+}
+
+/**
+ * A scannable summary card: a definition list so screen readers announce each label with
+ * its value. Rows stack label-over-value on phones and sit side by side from `sm` up.
+ */
+export function Summary({ problem, approach, result, decision, stack, data }: SummaryContent) {
+  const rows: { term: string; value: React.ReactNode; strong?: boolean }[] = [
+    { term: 'Problem', value: problem },
+    { term: 'Approach', value: approach },
+    { term: 'Result', value: result, strong: true },
+    { term: 'Decision it supports', value: decision },
+    { term: 'Stack', value: stack.join(', ') },
+    { term: 'Data', value: <>
+      <span className='block'><span className='font-medium'>Synthetic:</span> {data.synthetic}</span>
+      <span className='block'><span className='font-medium'>Real:</span> {data.real}</span>
+    </> },
+    { term: 'My role', value: 'Designed and built end to end (a solo project)' },
+  ]
+  return (
+    <Card>
+      <CardHeader><CardTitle as='h2'>At a glance</CardTitle></CardHeader>
+      <CardContent className='text-sm leading-relaxed'>
+        <dl className='divide-y divide-neutral-200/70 dark:divide-neutral-800/70'>
+          {rows.map(r => (
+            <div key={r.term} className={`grid gap-x-4 gap-y-0.5 py-2 px-2 sm:grid-cols-[9.5rem_1fr] ${r.strong ? 'rounded-lg bg-accent-500/10 dark:bg-accent-500/15' : ''}`}>
+              <dt className='text-xs font-semibold uppercase tracking-wide text-neutral-600 dark:text-neutral-400 sm:pt-0.5'>{r.term}</dt>
+              <dd className={r.strong ? 'font-semibold text-neutral-900 dark:text-white' : 'opacity-90'}>{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
   )
 }
 

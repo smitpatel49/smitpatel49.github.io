@@ -4,7 +4,18 @@ const IMG = '/media/nlp/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='nlp' lede='A ticket classifier plus a cost-based policy that decides which tickets are safe to route without a person reading them, measured on wording and issue types the model never saw in training.'>
+    <CaseStudyPage slug='nlp' lede='A ticket classifier plus a cost-based policy that decides which tickets are safe to route without a person reading them, measured on wording and issue types the model never saw in training.'
+      summary={{
+        problem: 'Decide which support tickets can go to one of six queues without a person reading them, and what that saves.',
+        approach: 'Four classifiers, from TF-IDF to a pretrained MiniLM encoder, and a cost-based routing policy, tested on held-out wording and on issue types never seen in training.',
+        result: '80% of tickets auto-routed at 94.6% accuracy, cutting triage cost 57%, from $1.50 to $0.64 a ticket.',
+        decision: 'How far to automate triage, and which model to trust when new issue types appear.',
+        stack: ['Python', 'scikit-learn', 'PyTorch', 'Hugging Face transformers', 'MiniLM'],
+        data: {
+          synthetic: '12,000 tickets with known labels, typos, vague subject lines and two-issue tickets.',
+          real: 'the Bitext customer-support dataset, 24,635 messages after de-duplication.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>A support team gets tickets for six queues (billing, technical, shipping, account access, returns, feature requests) and someone reads every one to forward it. Which tickets can be routed without a person, and what does that save? A support operations lead would use the answer to decide how far to automate triage. For each ticket the router outputs a suggested queue, its confidence, the runner-up, a decision and a reason, so the uncertain tickets reach a person with a suggestion attached.</p>

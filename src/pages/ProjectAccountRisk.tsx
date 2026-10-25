@@ -4,7 +4,18 @@ const IMG = '/media/account-risk/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='account-risk' lede='One agreed definition of an at-risk account, written once and traced to tests, then checked against 453 past renewals: the agreed rule caught 14% of the ARR that later churned, and moving one threshold catches 48%.'>
+    <CaseStudyPage slug='account-risk' lede='One agreed definition of an at-risk account, written once and traced to tests, then checked against 453 past renewals: the agreed rule caught 14% of the ARR that later churned, and moving one threshold catches 48%.'
+      summary={{
+        problem: 'Pick the accounts Customer Success should call before renewal, and find out whether the at-risk rule stakeholders agreed on actually catches churn.',
+        approach: 'Requirements traced to tests, checks on five CRM extracts, and one rule shared by the worklist, the dashboard and a backtest against 453 past renewals.',
+        result: 'The agreed 30-day rule caught 14% of churned ARR; a 14-day threshold catches 48%, against 21% for random flagging at the same volume.',
+        decision: 'Whether to approve change request CR-01 (14 days instead of 30), and which accounts go on this week’s call list.',
+        stack: ['Python', 'pandas', 'NumPy', 'scikit-learn', 'matplotlib', 'offline HTML dashboard'],
+        data: {
+          synthetic: '900 accounts across five CRM extracts, with 453 past renewal outcomes and a deliberately dirty current book.',
+          real: 'none; the stakeholders and sign-offs are illustrative too.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>A B2B software company wants Customer Success to stop being surprised by churn at renewal time. Which accounts should account managers call this week, and is the rule that picks them any good? Four groups use the answer:</p>

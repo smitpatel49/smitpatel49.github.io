@@ -4,7 +4,18 @@ const IMG = '/media/mna/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='mna' lede='A deal screen that keeps what the board decides (the financing mix) apart from what nobody controls (premium, synergies, rates, growth), then asks the question EPS can’t answer: is the price below what the target is worth to us?'>
+    <CaseStudyPage slug='mna' lede='A deal screen that keeps what the board decides (the financing mix) apart from what nobody controls (premium, synergies, rates, growth), then asks the question EPS can’t answer: is the price below what the target is worth to us?'
+      summary={{
+        problem: 'A board weighing a roughly $660M acquisition wants to know whether it dilutes EPS, how to pay for it and the most it should pay.',
+        approach: '20,000 Monte Carlo draws of EPS accretion across 66 financing mixes under cash and leverage limits, then a DCF of the target and its synergies.',
+        result: 'Walk-away premium of 20% against an expected 38%: accretive by year 3 in 93% of simulations, value-creating in only 5%.',
+        decision: 'Whether to bid, how to finance the deal, and the premium at which to walk away.',
+        stack: ['Python', 'NumPy', 'pandas', 'matplotlib'],
+        data: {
+          synthetic: 'a fictional mid-cap acquirer and target, with ranges for every uncertain input.',
+          real: 'none; the companies are made up, so it’s no claim about a real deal.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>The board’s first question about an acquisition is usually “will this dilute our earnings per share, and for how long?” On its own that’s the wrong decision rule: EPS can rise while the price destroys value. This screen answers three questions from one set of assumptions, for a fictional mid-cap buying a smaller competitor for about $660M:</p>

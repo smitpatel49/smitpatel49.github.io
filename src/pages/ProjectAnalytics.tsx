@@ -4,7 +4,18 @@ const IMG = '/media/analytics/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='analytics' lede='Two questions a growth team asks every month, “do new customers come back?” and “where do shoppers drop out?”, answered in SQL, checked twice over, and rerun on a real retailer’s invoices.'>
+    <CaseStudyPage slug='analytics' lede='Two questions a growth team asks every month, “do new customers come back?” and “where do shoppers drop out?”, answered in SQL, checked twice over, and rerun on a real retailer’s invoices.'
+      summary={{
+        problem: 'Tell a growth team whether new customers come back, by acquisition channel, and where shoppers drop out before buying.',
+        approach: 'Six SQL reports cross-checked in pandas and PostgreSQL, with Wilson intervals and a difference-in-differences for the checkout change.',
+        result: 'The mobile checkout fix added +20.0 points of checkout completion (95% CI 17.4–23.1), against a planted true effect of +19.',
+        decision: 'How much each channel can pay to acquire a customer, and whether the mobile checkout change paid off.',
+        stack: ['SQL', 'SQLite', 'PostgreSQL 16', 'Python', 'pandas', 'NumPy', 'matplotlib'],
+        data: {
+          synthetic: 'a two-year event log with planted effects (11,092 customers, 17,038 orders).',
+          real: 'Online Retail II, a UK gift retailer’s invoices, December 2009 to November 2011.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>The two questions sound alike but need different denominators. Retention is a cohort question, counted per customer; drop-off is a funnel question, counted per session. The answers feed two decisions: how much each acquisition channel can cost per customer before it loses money, and whether a product change (here a mobile checkout fix) earned its keep.</p>

@@ -4,7 +4,18 @@ const IMG = '/media/forecast/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='forecast' lede='A daily forecast for each of the next seven days, for every store and category, plus stock levels that actually hit their service target, tested the way it would be used: retrained every four weeks and scored on forecasts made before the actuals were known.'>
+    <CaseStudyPage slug='forecast' lede='A daily forecast for each of the next seven days, for every store and category, plus stock levels that actually hit their service target, tested the way it would be used: retrained every four weeks and scored on forecasts made before the actuals were known.'
+      summary={{
+        problem: 'Give a retailer that reorders weekly a daily forecast for each of the next seven days, per store and category, and stock levels that hit a service target.',
+        approach: 'One global LightGBM model per horizon with leakage tests and split-conformal quantiles, backtested on rolling origins against Holt-Winters.',
+        result: '27.5% WAPE against a 25.9% noise floor (Holt-Winters 29.1%); level with Holt-Winters on real data, 38.7% vs. 38.0%.',
+        decision: 'How much to stock per store and category for a 90% or 95% in-stock target.',
+        stack: ['Python', 'LightGBM', 'statsmodels', 'pandas', 'joblib'],
+        data: {
+          synthetic: '12 store/category series (2023–2025) with a known true mean.',
+          real: 'Online Retail II, 14 daily series built from a UK gift retailer’s invoices, 2009–2011.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>A retailer that reorders weekly needs, each morning, a forecast for each of the next seven days and a sense of how wrong it might be. A replenishment planner would read the point forecast to see the week ahead and stock to the calibrated 90th or 95th percentile for a 90% or 95% in-stock target.</p>

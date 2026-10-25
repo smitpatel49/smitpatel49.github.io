@@ -1,9 +1,9 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Routes, Route, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { Badge } from './components/ui/badge'
-import { Mail, Github, Linkedin, ArrowRight, Cpu, LineChart, Boxes, Users, Menu, X } from 'lucide-react'
+import { Mail, Github, Linkedin, Cpu, LineChart, Boxes, Users, Menu, X } from 'lucide-react'
 import AmbientBackground from './components/AmbientBackground'
 import ScrollManager from './components/ScrollManager'
 import ThemeToggle from './components/ThemeToggle'
@@ -13,10 +13,16 @@ import { caseStudyPages } from './pages/caseStudies'
 import { projects } from './data/projects'
 import { useHeadMeta } from './hooks/useHeadMeta'
 import { EMAIL, GITHUB, LINKEDIN } from './data/site'
+import Hero from './components/home/Hero'
+import ProjectBento from './components/home/ProjectBento'
+import CopyEmailButton from './components/home/CopyEmailButton'
+import { CommandMenu } from './components/home/CommandMenu'
+import ViewTransitions from './components/home/ViewTransitions'
+import { NAV_LINKS } from './components/home/sections'
+import { useReveal } from './components/home/useReveal'
 
-const TITLE = 'Data Scientist & Analytics Professional'
-const LOCATION = 'Chicago, IL'
-
+// The demos fetch their own data near the viewport; the code loads with the section.
+const TryTheModels = React.lazy(() => import('./demos/TryTheModels'))
 
 const skillGroups = [
   { group: 'Languages & Core', items: ['Python','SQL','Pandas','NumPy','Statistics'] },
@@ -52,18 +58,6 @@ const education = [
     ] },
 ]
 
-/**
- * Fade-and-rise as an element scrolls into view. With reduced motion it renders in its
- * final state (initial={false}), and print CSS forces `.reveal` visible, so content is
- * never left invisible if the in-view animation doesn't fire.
- */
-function useReveal(amount: number) {
-  const reduce = useReducedMotion()
-  return reduce
-    ? { initial: false as const }
-    : { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount }, transition: { duration: 0.5 } }
-}
-
 const Section=({id,title,children,className}:{id:string;title:string;children:React.ReactNode;className?:string})=>{
   const reveal = useReveal(0.5)
   return (
@@ -74,8 +68,6 @@ const Section=({id,title,children,className}:{id:string;title:string;children:Re
     </section>
   )
 }
-
-const Pill=({children}:{children:React.ReactNode})=>(<span className='text-xs md:text-sm rounded-full border px-3 py-1 bg-white/60 dark:bg-white/5 backdrop-blur'>{children}</span>)
 
 // A plain GET-method form posting to a mailto: action is unreliable across
 // browsers (Chrome in particular often just ignores the query string), so
@@ -116,17 +108,6 @@ const ContactForm = () => {
     </form>
   )
 }
-
-const NAV_LINKS: [id: string, to: string, label: string][] = [
-  ['home', '/', 'Home'],
-  ['about', '/#about', 'About'],
-  ['playground', '/#playground', 'Playground'],
-  ['experience', '/#experience', 'Experience'],
-  ['projects', '/#projects', 'Projects'],
-  ['skills', '/#skills', 'Skills'],
-  ['education', '/#education', 'Education'],
-  ['contact', '/#contact', 'Contact'],
-]
 
 /**
  * Full-screen menu below the xl breakpoint: a modal dialog that closes on Escape, keeps
@@ -248,46 +229,13 @@ const Header=()=>{
           ))}
         </nav>
         <div className='justify-self-end flex items-center gap-2'>
+          <CommandMenu/>
           <ThemeToggle/>
           <HeaderIconLinks/>
         </div>
         <MobileMenu open={open} onClose={()=>setOpen(false)} triggerRef={triggerRef} />
       </div>
     </HeaderBar>
-  )
-}
-
-const Hero=()=>(
-  <section id='home' className='container-narrow pt-12 pb-6 relative text-center'>
-    <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className='reveal flex flex-col gap-6'>
-      <div className='flex items-center justify-center'>
-        <div>
-          <h1 className='hero-name text-4xl md:text-5xl font-semibold tracking-tight bg-gradient-to-r from-accent-600 to-accent-500 bg-clip-text text-transparent'>Smit Patel</h1>
-          {/* Title and location wrap as whole units: stacked on phones, one line with a separator from sm up. */}
-          <p className='mt-2 text-[15px] md:text-[17px] opacity-80'>
-            <span className='block sm:inline'>{TITLE}</span><span className='sr-only'>, </span><span className='hidden sm:inline' aria-hidden='true'> · </span><span className='block sm:inline'>{LOCATION}</span>
-          </p>
-        </div>
-      </div>
-      <p className='text-[15px] md:text-[17px] leading-relaxed opacity-90'>I turn ambiguous business problems into decisions and systems, using data analysis, statistical modeling, and production ML. I work the full arc: scoping the business question, exploring and analyzing the data, building the model or dashboard, and shipping it into something people actually use.</p>
-      <div className='flex gap-2 flex-wrap mt-2 justify-center'>{['Statistical Modeling','Production ML','Business Analytics'].map((t,i)=>(<Pill key={i}>{t}</Pill>))}</div>
-    </motion.div>
-  </section>
-)
-
-const ProjectCard=({p}:{p:typeof projects[number]})=>{
-  const reveal = useReveal(0.3)
-  return (
-    <motion.div {...reveal} className='reveal'>
-      <Card className='hover:shadow-md transition-shadow h-full flex flex-col'>
-        <CardHeader><CardTitle as='h3' className='flex items-center gap-2'><span className='inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl bg-accent-500/10 text-accent-600 dark:text-accent-400'><p.icon className='w-4 h-4' aria-hidden='true'/></span><span>{p.title}</span></CardTitle></CardHeader>
-        <CardContent className='text-sm space-y-4 text-left flex-1 flex flex-col'>
-          <p className='opacity-90'>{p.summary}</p>
-          <div className='flex gap-2 flex-wrap'>{p.tech.map((t,j)=>(<Badge key={j} variant='outline'>{t}</Badge>))}</div>
-          <div className='mt-auto pt-1'><Link to={'/projects/'+p.slug} className='inline-flex items-center gap-2 underline'>Read full case study<span className='sr-only'>: {p.title}</span> <ArrowRight className='w-4 h-4' aria-hidden='true'/></Link></div>
-        </CardContent>
-      </Card>
-    </motion.div>
   )
 }
 
@@ -324,32 +272,6 @@ const Home=()=>{
           </div>
       </Section>
 
-    <Section id='playground' title='Interactive Playground' className='section-bg'>
-          <div className='max-w-5xl mx-auto px-4 sm:px-6'>
-      <div className='grid grid-cols-1 gap-4'>
-        <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle as='h3'>Churn Scoring Simulator</CardTitle></CardHeader>
-          <CardContent className='text-sm space-y-3'>
-            <ChurnDemo />
-          </CardContent>
-        </Card>
-        <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle as='h3'>Quick NER Demo</CardTitle></CardHeader>
-          <CardContent className='text-sm space-y-3'>
-            <NerDemo />
-          </CardContent>
-        </Card>
-        <Card className='hover:shadow-md transition-shadow'>
-          <CardHeader><CardTitle as='h3'>Mini SQL Playground</CardTitle></CardHeader>
-          <CardContent className='text-sm space-y-3'>
-            <SqlDemo />
-          </CardContent>
-        </Card>
-      </div>
-    
-          </div>
-      </Section>
-
     <Section id='experience' title='Experience' className='section-bg'>
         <div className='max-w-5xl mx-auto px-4 sm:px-6'>
           <p className='text-sm opacity-70 text-center mb-6 max-w-2xl mx-auto'>Grouped by the kind of work rather than by employer, and kept intentionally high-level. Think of it as a complement to my resume, not a repeat of it.</p>
@@ -370,14 +292,18 @@ const Home=()=>{
         </div>
       </Section>
 
-    <Section id='projects' title='Selected Projects' className='section-bg'>
-          <div className='max-w-5xl mx-auto px-4 sm:px-6'>
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch'>
-          {projects.map(p => <ProjectCard key={p.slug} p={p}/>)}
-        </div>
-      
-          </div>
-      </Section>
+    {/* Wider than the text sections from lg up, so the bento's three columns have room. */}
+    <Section id='projects' title='Selected Projects' className='section-bg lg:max-w-5xl'>
+      <div className='px-4 sm:px-6'>
+        <ProjectBento/>
+      </div>
+    </Section>
+
+    <Section id='demos' title='Try the models' className='section-bg'>
+      <Suspense fallback={<p className='text-center text-sm opacity-70'>Loading the demos…</p>}>
+        <TryTheModels/>
+      </Suspense>
+    </Section>
 
     <Section id='skills' title='Skills' className='section-bg'>
           <div className='max-w-5xl mx-auto px-4 sm:px-6'>
@@ -424,7 +350,10 @@ const Home=()=>{
           <ContactForm/>
         </div>
         <div className='w-full flex flex-col items-center gap-3'>
-          <a className='inline-flex items-center gap-2 underline' href={'mailto:'+EMAIL}><Mail className='w-5 h-5' aria-hidden='true'/> {EMAIL}</a>
+          <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-2'>
+            <a className='inline-flex items-center gap-2 underline' href={'mailto:'+EMAIL}><Mail className='w-5 h-5' aria-hidden='true'/> {EMAIL}</a>
+            <CopyEmailButton email={EMAIL}/>
+          </div>
           <a className='inline-flex items-center gap-2 underline' href={GITHUB} target='_blank' rel='noreferrer'><Github className='w-5 h-5' aria-hidden='true'/> GitHub<span className='sr-only'> (opens in a new tab)</span></a>
           <a className='inline-flex items-center gap-2 underline' href={LINKEDIN} target='_blank' rel='noreferrer'><Linkedin className='w-5 h-5' aria-hidden='true'/> LinkedIn<span className='sr-only'> (opens in a new tab)</span></a>
         </div>
@@ -439,212 +368,6 @@ const Home=()=>{
   )
 }
 
-function sigmoid(x:number){ return 1/(1+Math.exp(-x)) }
-
-const Slider=({id,label,value,min,max,onChange}:{id:string;label:string;value:number;min:number;max:number;onChange:(v:number)=>void})=>(
-  <div className='space-y-1'>
-    <div className='flex items-baseline justify-between gap-3'>
-      <label htmlFor={id} className='text-xs'>{label}</label>
-      <output htmlFor={id} className='text-xs font-medium tabular-nums'>{value}</output>
-    </div>
-    <input id={id} className='w-full' type='range' min={min} max={max} value={value} onChange={(e)=>onChange(Number(e.target.value))}/>
-  </div>
-)
-
-function ChurnDemo(){
-  const [tenure,setTenure]=useState(6)
-  const [monthly,setMonthly]=useState(60)
-  const [tickets,setTickets]=useState(3)
-  const score = sigmoid(-1.4 + (12 - tenure)*0.18 + (monthly - 50)*0.02 + tickets*0.25)
-  const pct = Math.round(score*100)
-  return (
-    <div>
-      <div className='grid grid-cols-1 gap-3'>
-        <Slider id='churn-tenure' label='Tenure (months)' value={tenure} min={1} max={24} onChange={setTenure}/>
-        <Slider id='churn-spend' label='Monthly Spend ($)' value={monthly} min={10} max={200} onChange={setMonthly}/>
-        <Slider id='churn-tickets' label='Support Tickets (30d)' value={tickets} min={0} max={10} onChange={setTickets}/>
-      </div>
-      <div className='mt-4 text-sm' aria-live='polite'>Churn Probability: <span className='font-medium'>{pct}%</span></div>
-      <div className='h-2 rounded bg-neutral-200 dark:bg-neutral-800 mt-2' aria-hidden='true'><div className='h-2 rounded bg-neutral-900 dark:bg-neutral-100' style={{ width: String(pct) + '%' }} /></div>
-      <div className='mt-3 text-xs opacity-70'>*A toy scoring formula to show the idea; it isn’t one of the projects below.</div>
-    </div>
-  )
-}
-
-type SqlRow = Record<string, string | number>
-const ORDERS_TABLE: SqlRow[] = [
-  { id:1, customer:'Ava',    region:'West',  amount:120, status:'shipped' },
-  { id:2, customer:'Liam',   region:'East',  amount:75,  status:'pending' },
-  { id:3, customer:'Noah',   region:'West',  amount:200, status:'shipped' },
-  { id:4, customer:'Emma',   region:'South', amount:50,  status:'cancelled' },
-  { id:5, customer:'Olivia', region:'East',  amount:300, status:'shipped' },
-  { id:6, customer:'Ethan',  region:'West',  amount:90,  status:'pending' },
-]
-const ORDERS_COLUMNS = Object.keys(ORDERS_TABLE[0])
-// Lower-cased name -> real column, so identifiers are case-insensitive and only real
-// columns resolve (a plain `in` check would also accept toString, constructor, ...).
-const ORDERS_COLUMN_SET = new Map(ORDERS_COLUMNS.map(c => [c.toLowerCase(), c]))
-const SQL_EXAMPLE = 'SELECT * FROM orders WHERE amount > 100 ORDER BY amount DESC LIMIT 5'
-
-type SqlResult = { columns:string[]; rows:SqlRow[] } | { error:string }
-
-function resolveColumn(name:string): string | undefined {
-  return ORDERS_COLUMN_SET.get(name.toLowerCase())
-}
-function unknownColumn(name:string, where:string){
-  return { error: `Unknown column “${name}” in ${where}. Columns: ${ORDERS_COLUMNS.join(', ')}.` }
-}
-function compareOp(a:string|number, b:string|number, op:string){
-  switch(op){
-    case '=': return a===b
-    case '!=': case '<>': return a!==b
-    case '>': return a>b
-    case '<': return a<b
-    case '>=': return a>=b
-    case '<=': return a<=b
-    default: return false
-  }
-}
-
-/** A deliberately small SQL subset: SELECT cols FROM orders [WHERE col op value] [ORDER BY col [ASC|DESC]] [LIMIT n]. */
-function runMiniSQL(query:string, table:SqlRow[]): SqlResult {
-  const q = query.trim().replace(/;\s*$/, '').trim()
-  if (!q) return { error: `Type a query, for example: ${SQL_EXAMPLE}` }
-  if (!/^SELECT\b/i.test(q)) return { error: `Only SELECT queries are supported. Try: ${SQL_EXAMPLE}` }
-  const m = q.match(/^SELECT\s+([\s\S]+?)\s+FROM\s+(\S+)([\s\S]*)$/i)
-  if (!m) return { error: `Expected SELECT <columns> FROM orders. Try: ${SQL_EXAMPLE}` }
-  const [, colsRaw, tableName, restRaw] = m
-  if (tableName.toLowerCase() !== 'orders') return { error: `Unknown table “${tableName}”. The only table is orders.` }
-
-  const unsupported = restRaw.replace(/'(?:[^']|'')*'/g, "''").match(/\b(JOIN|GROUP\s+BY|HAVING|UNION|OFFSET)\b/i)
-  if (unsupported) return { error: `${unsupported[1].toUpperCase().replace(/\s+/, ' ')} isn’t supported here; this mini engine handles WHERE, ORDER BY and LIMIT.` }
-  const rest = restRaw.match(/^(?:\s+WHERE\s+([\s\S]+?))?(?:\s+ORDER\s+BY\s+(\S+?)(?:\s+(ASC|DESC))?)?(?:\s+LIMIT\s+(\S+))?\s*$/i)
-  if (!rest) return { error: `Couldn’t read “${restRaw.trim()}”. After FROM orders, use WHERE, ORDER BY and LIMIT, in that order.` }
-  const [, whereRaw, orderRaw, orderDir, limitRaw] = rest
-  let rows = table.slice()
-
-  if (whereRaw) {
-    if (/\b(AND|OR)\b/i.test(whereRaw.replace(/'(?:[^']|'')*'/g, "''")))
-      return { error: 'AND and OR aren’t supported: use a single condition, such as amount > 100.' }
-    const cm = whereRaw.trim().match(/^(\w+)\s*(>=|<=|!=|<>|=|>|<)\s*([\s\S]+)$/)
-    if (!cm) return { error: `Couldn’t read the WHERE condition “${whereRaw.trim()}”. Use column, operator, value, such as region = 'West'.` }
-    const [, colRaw, op, litRaw] = cm
-    const col = resolveColumn(colRaw)
-    if (!col) return unknownColumn(colRaw, 'WHERE')
-    const numeric = typeof table[0][col] === 'number'
-    const lit = litRaw.trim()
-    let value: string | number
-    const quoted = lit.match(/^'((?:[^']|'')*)'$/)
-    if (quoted) {
-      const text = quoted[1].replace(/''/g, "'")
-      if (numeric) {
-        if (text.trim() === '' || isNaN(Number(text))) return { error: `${col} is a number column, so compare it with a number, such as ${col} > 100.` }
-        value = Number(text)
-      } else value = text.toLowerCase()
-    } else if (/^-?\d+(\.\d+)?$/.test(lit)) {
-      if (!numeric) return { error: `${col} is a text column, so put the value in single quotes, such as ${col} = 'value'.` }
-      value = Number(lit)
-    } else if (/^\w+$/.test(lit)) {
-      return numeric
-        ? { error: `${col} is a number column, so compare it with a number, such as ${col} > 100.` }
-        : { error: `Text values need single quotes: ${col} ${op} '${lit}'.` }
-    } else {
-      return { error: `Couldn’t read the value “${lit}”. Use a number or text in single quotes.` }
-    }
-    rows = rows.filter(r => {
-      const cell = r[col]
-      return compareOp(typeof cell === 'string' ? cell.toLowerCase() : cell, value, op)
-    })
-  }
-
-  if (orderRaw) {
-    const col = resolveColumn(orderRaw)
-    if (!col) return unknownColumn(orderRaw, 'ORDER BY')
-    const dir = (orderDir || '').toUpperCase() === 'DESC' ? -1 : 1
-    rows = rows.slice().sort((a,b)=>{
-      const av=a[col], bv=b[col]
-      if(av<bv) return -1*dir; if(av>bv) return 1*dir; return 0
-    })
-  }
-
-  if (limitRaw !== undefined) {
-    if (!/^\d+$/.test(limitRaw)) return { error: `LIMIT needs a whole number, such as LIMIT 5.` }
-    rows = rows.slice(0, parseInt(limitRaw, 10))
-  }
-
-  let columns:string[]
-  if (colsRaw.trim() === '*') columns = ORDERS_COLUMNS
-  else {
-    columns = []
-    for (const raw of colsRaw.split(',').map(c=>c.trim())) {
-      if (raw === '*') return { error: 'Use * on its own, or list column names.' }
-      if (!/^\w+$/.test(raw)) return { error: `Only column names or * can be selected; “${raw}” isn’t supported (no functions, expressions or aliases).` }
-      const col = resolveColumn(raw)
-      if (!col) return unknownColumn(raw, 'SELECT')
-      columns.push(col)
-    }
-  }
-  const outRows = rows.map(r=>{ const o:SqlRow={}; columns.forEach(c=>o[c]=r[c]); return o })
-  return { columns, rows: outRows }
-}
-
-function SqlDemo(){
-  const [query,setQuery] = useState("SELECT customer, region, amount FROM orders WHERE amount > 80 ORDER BY amount DESC LIMIT 5;")
-  const result = useMemo(()=>runMiniSQL(query, ORDERS_TABLE), [query])
-  return (
-    <div>
-      <div className='text-xs opacity-70 mb-2'>Table: <code>orders(id, customer, region, amount, status)</code></div>
-      <label htmlFor='sql-query' className='sr-only'>SQL query</label>
-      <textarea id='sql-query' className='w-full h-20 p-2 rounded border bg-transparent font-mono text-xs' value={query} onChange={(e)=>setQuery(e.target.value)} spellCheck={false} aria-describedby='sql-result' />
-      <div id='sql-result' aria-live='polite'>
-        {('error' in result) ? (
-          <div className='mt-3 text-xs text-red-600 dark:text-red-400'>{result.error}</div>
-        ) : (
-          <div className='mt-3 overflow-x-auto'>
-            <table className='w-full text-xs border-collapse'>
-              <thead><tr>{result.columns.map((c,i)=>(<th key={c+':'+i} className='text-left border-b border-neutral-300 dark:border-neutral-700 px-2 py-1 opacity-70'>{c}</th>))}</tr></thead>
-              <tbody>
-                {result.rows.map((r,i)=>(
-                  <tr key={i} className='border-b border-neutral-200/50 dark:border-neutral-800/50'>
-                    {result.columns.map((c,j)=>(<td key={c+':'+j} className='px-2 py-1'>{String(r[c])}</td>))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {result.rows.length===0 && <div className='text-xs opacity-60 mt-1'>No rows matched.</div>}
-          </div>
-        )}
-      </div>
-      <div className='mt-3 text-xs opacity-70'>*Runs a simplified SQL subset (SELECT/FROM/WHERE/ORDER BY/LIMIT) against an in-memory sample table, for demonstration only, not a full SQL engine.</div>
-    </div>
-  )
-}
-
-function extractNER(t:string){
-  const res: {text:string;label:string}[] = []
-  const push=(m:RegExpMatchArray|null,label:string)=>{ if(!m) return; m.forEach(v=>res.push({text:v,label})) }
-  push(t.match(/\b\d{4}-\d{2}-\d{2}\b/g), 'DATE')
-  push(t.match(/\bNorthwind\b/g), 'ORG')
-  push(t.match(/\b\d{3}-\d{2}\b/g), 'CLAIM_ID')
-  push(t.match(/\b[A-Z][a-z]+\s[A-Z][a-z]+\b/g), 'PERSON')
-  return res
-}
-function NerDemo(){
-  const [text,setText] = useState('Smit Patel visited Northwind on 2025-02-17 about claim 000-01.')
-  const ents = extractNER(text)
-  return (
-    <div>
-      <label htmlFor='ner-text' className='sr-only'>Text to tag</label>
-      <textarea id='ner-text' className='w-full h-28 p-2 rounded border bg-transparent' value={text} onChange={(e)=>setText(e.target.value)} />
-      <div className='mt-3 text-sm leading-relaxed' aria-live='polite'>
-        {ents.map((e,i)=>(<span key={i} className='px-1.5 py-0.5 rounded-md border mr-1'>{e.text} <span className='opacity-60 text-xs'>{e.label}</span></span>))}
-      </div>
-      <div className='mt-2 text-xs opacity-70'>Rule-based toy example; it isn’t one of the projects below.</div>
-    </div>
-  )
-}
-
-/** Light placeholder while a case-study chunk loads. */
 const PageFallback = () => (
   <div className={PAGE_SHELL}>
     <PageHeader/>
@@ -656,6 +379,7 @@ export default function App(){
   return (
     <>
       <ScrollManager/>
+      <ViewTransitions/>
       <Suspense fallback={<PageFallback/>}>
         <Routes>
           <Route path='/' element={<Home/>} />

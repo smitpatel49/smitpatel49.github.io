@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Github, Linkedin } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
+import { CommandMenu } from './home/CommandMenu'
 import { ICON_BUTTON } from './iconButton'
 import { EMAIL, GITHUB, LINKEDIN } from '../data/site'
 
@@ -41,6 +42,7 @@ export function PageHeader() {
           <Link to='/#projects' className='opacity-80 hover:opacity-100 transition-colors'>Projects</Link>
         </nav>
         <div className='flex items-center gap-2'>
+          <CommandMenu/>
           <ThemeToggle/>
           <HeaderIconLinks className='hidden sm:flex'/>
         </div>

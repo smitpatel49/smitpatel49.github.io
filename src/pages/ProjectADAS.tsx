@@ -4,7 +4,18 @@ const IMG = '/media/adas/'
 
 export default function Page() {
   return (
-    <CaseStudyPage slug='adas' lede='A simulated car drives a 900 m track using only its camera: classical computer vision finds the lane and the stop and yield signs, a tracker bridges dropouts, and PID control drives. It holds in stress conditions, and breaks, at the same places every lap, when night, rain and a lead car come together.'>
+    <CaseStudyPage slug='adas' lede='A simulated car drives a 900 m track using only its camera: classical computer vision finds the lane and the stop and yield signs, a tracker bridges dropouts, and PID control drives. It holds in stress conditions, and breaks, at the same places every lap, when night, rain and a lead car come together.'
+      summary={{
+        problem: 'Find out whether a camera-only stack of classical vision and control can keep a car in its lane and obey stop and yield signs, and where it breaks.',
+        approach: 'Closed-loop simulation at 20 Hz: rendered camera frames, bird’s-eye lane fitting, an odometry-predicted tracker, sign detection and PID control.',
+        result: 'No lane departures and 12/12 stops over 6 stress laps; with night, rain and a lead car combined, only 6/12 yields obeyed.',
+        decision: 'What a perception front end must deliver (sign confirmation range, lane dropout rate) before it’s connected to a controller.',
+        stack: ['Python', 'OpenCV', 'NumPy', 'pandas', 'matplotlib'],
+        data: {
+          synthetic: 'a simulated 900 m track with exact ground truth for every frame.',
+          real: 'none; no real roads or vehicles.',
+        },
+      }}>
 
       <Block title='Overview'>
         <p>Can a camera-only driver-assistance stack, built from classical computer vision and control with no learned models, keep a car in its lane and handle stop and yield signs, and where does it break? The answer is for someone deciding what a perception front end has to deliver before it’s worth connecting to a controller: how far ahead a sign must be confirmed, how often the lane may drop out, and how much a tracker can paper over.</p>
